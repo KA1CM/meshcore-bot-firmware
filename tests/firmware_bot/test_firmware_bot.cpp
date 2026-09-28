@@ -683,7 +683,7 @@ static void test_command_outputs() {
 
   result = run_command("!cmd diag", out, sizeof(out));
   assert(result.code == BOT_COMMAND_RESULT_OK);
-  assert_starts_with(out, "Diag: status channels stats prefix time lora id neighbors sig air");
+  assert_starts_with(out, "Diag: status channels stats prefix time lora id neighbors snr air");
   assert(result.text_len <= BOT_MAX_GROUP_RESPONSE_LEN);
 
   // Every discoverable command must appear in either the chat or the diag
@@ -813,7 +813,7 @@ static void test_sig_air_coin_commands() {
   char out[BOT_MAX_RESPONSE_LEN + 1];
   BotCommand command;
 
-  assert(FirmwareBot::parseCommand("!sig", 4, &command));
+  assert(FirmwareBot::parseCommand("!snr", 4, &command));
   assert(command.id == BOT_COMMAND_SIG);
   BotCommandContext context = make_context();
   context.path_snr_quarters = 23;

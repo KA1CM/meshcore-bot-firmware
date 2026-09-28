@@ -40,6 +40,10 @@ class Handler(BaseHTTPRequestHandler):
                     readings[-1].update(result=3, status="no_response", millivolts=None)
                 items.append(dict(entry, displayName=f"Sample repeater {i + 1}", readings=readings))
             self.reply(json.dumps({"version": 1, "repeaters": items, "now": now, "timeReady": True,
+                                  "canManage": True, "neighbors": [
+                                      {"name": "Chestnut Hill - FN31jf", "keyPrefix": "1234abcd5678", "rssi": -100, "snr": 4.75, "samples": 16, "ageSeconds": 8},
+                                      {"name": "Sample hilltop repeater", "keyPrefix": "9876abcd5678", "rssi": -108, "snr": -1.25, "samples": 9, "ageSeconds": 92},
+                                      {"name": "", "keyPrefix": "abcd12345678", "rssi": -112, "snr": -4, "samples": 3, "ageSeconds": 3605}],
                                   "storageOK": True, "running": False, "active": -1, "error": "",
                                   "node": "PREVIEW — SAMPLE DATA", "ip": "127.0.0.1", "manualReady": True,
                                   "today": (now - 5 * 3600) // 86400,
