@@ -17,15 +17,16 @@ int main(){
  strcpy(cmd.args,"list");cmd.args_len=4;BotCommands::executeCommand(cmd,ctx,text,sizeof(text));
  assert(strstr(text,"list: list of all managed repeaters")&&strstr(text,"list low:"));
  MonitorCore::Entry entries[32]{};char names[32][33]{};
- const char* full[]={"Chestnut Hill - FN31jf","FlexSolar","North-Stamford","North / Stamford","!Symbol"};
+ const char* full[]={"Chestnut Hill - FN31jf","FlexSolar","North-Stamford","North-Stamford / Stamford","!Symbol"};
  for(size_t i=0;i<32;++i){entries[i].enabled=true;entries[i].key[0]=i+1;BotVoltageList::shortName(i<5?full[i]:"LongRepeaterNameWith32CharactersX suffix",entries[i].key,names[i]);entries[i].readings[0].timestamp=2000000000;entries[i].readings[0].result=MonitorCore::Ok;entries[i].readings[0].millivolts=4199;}
- assert(!strcmp(names[0],"Chestnut Hill")&&!strcmp(names[2],"North")&&!strcmp(names[4],"[05000000]"));
+ assert(!strcmp(names[0],"Chestnut Hill")&&!strcmp(names[2],"North-Stamford")&&!strcmp(names[4],"!Symbol"));
  char readable[33];BotVoltageList::shortName("North Stamford   - FN31fd",entries[0].key,readable);assert(!strcmp(readable,"North Stamford"));
  BotVoltageList::shortName("Trumbull Mall",entries[0].key,readable);assert(!strcmp(readable,"Trumbull Mall"));
+ BotVoltageList::shortName("ABCDEFGHIJKLMNOPQRSTUVWXYZ",entries[0].key,readable);assert(!strcmp(readable,"ABCDEFGHIJKLMNOPQRSTUVWX"));
  entries[1].readings[1].timestamp=2000000010;entries[1].readings[1].result=MonitorCore::NoResponse;
  BotVoltageList::Snapshot snapshot;BotVoltageList::build(entries,names,32,snapshot);
  assert(!strcmp(snapshot.lines[0],"Chestnut Hill 4.20V")&&!strcmp(snapshot.lines[1],"FlexSolar N/A"));
- assert(strstr(snapshot.lines[2],"North[03000000]")&&strstr(snapshot.lines[3],"North[04000000]"));
+ assert(strstr(snapshot.lines[2],"North-Stamford[03000000]")&&strstr(snapshot.lines[3],"North-Stamford[04000000]"));
  size_t next=0;unsigned part=1;std::string joined;
  while(next<snapshot.count){size_t old=next;char body[121];assert(BotVoltageList::page(snapshot,next,part++,body,sizeof(body)));assert(next>old&&strlen(body)<=120);size_t written=0;auto result=FirmwareBot::writeResponseForChannel(BOT_CHANNEL_BOT,true,body,strlen(body),text,sizeof(text),&written);assert(result==BOT_WRITE_OK&&written==strlen(body));joined+=body;joined+='\n';}
  char heading[24];snprintf(heading,sizeof(heading),"1/%u\n",part-1);assert(joined.find(heading)==0);
@@ -37,12 +38,12 @@ int main(){
  entries[3].readings[0].millivolts=3500;
  entries[4].readings[0].timestamp=0;
  BotVoltageList::Snapshot low;BotVoltageList::build(entries,names,32,low,nullptr,true);
- assert(low.count==4&&strstr(low.lines[0],"Chestnut Hill")&&strstr(low.lines[1],"FlexSolar N/A")&&strstr(low.lines[2],"North[04000000]")&&strstr(low.lines[3],"N/A"));
+ assert(low.count==4&&strstr(low.lines[0],"Chestnut Hill")&&strstr(low.lines[1],"FlexSolar N/A")&&strstr(low.lines[2],"North-Stamford[04000000]")&&strstr(low.lines[3],"N/A"));
  // Disabled low-voltage and N/A repeaters are excluded from both commands.
  entries[1].enabled=false;entries[3].enabled=false;
  BotVoltageList::build(entries,names,32,snapshot);assert(snapshot.count==30);
- for(size_t i=0;i<snapshot.count;++i)assert(!strstr(snapshot.lines[i],"FlexSolar")&&!strstr(snapshot.lines[i],"North[04000000]"));
- assert(!strcmp(snapshot.lines[1],"North 3.60V")); // disabled duplicate needs no suffix
+ for(size_t i=0;i<snapshot.count;++i)assert(!strstr(snapshot.lines[i],"FlexSolar")&&!strstr(snapshot.lines[i],"North-Stamford[04000000]"));
+ assert(!strcmp(snapshot.lines[1],"North-Stamford 3.60V")); // disabled duplicate needs no suffix
  BotVoltageList::build(entries,names,32,low,nullptr,true);assert(low.count==2);
  size_t order[32];for(size_t i=0;i<32;++i)order[i]=31-i;
  BotVoltageList::build(entries,names,32,low,order,true);assert(low.count==2&&strstr(low.lines[1],"Chestnut Hill"));
