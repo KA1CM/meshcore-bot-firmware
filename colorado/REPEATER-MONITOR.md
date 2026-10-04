@@ -175,3 +175,39 @@ list: list of all managed repeaters with last saved voltage
 list low: list of repeaters with voltage below 3.6V or N/A
 ```
 `help list low` sends only the second line.
+
+## Admin DM repeater-list commands
+
+- `add <full key>` adds a unique, nonzero 64-hex-character public key, enabled by
+  default, and runs the existing favorite-contact protection. Set any new repeater
+  password separately in the dashboard; no password is inherited.
+- `remove <repeater>` removes the managed entry, its notes/history and saved
+  password. The companion radio contact and favorite flag remain intact.
+- `enable <repeater>` / `disable <repeater>` change the managed enabled flag while
+  preserving notes and history. Disabled entries remain available for explicit
+  manual checks but are excluded from scheduled checks and list/list low replies.
+
+Name matching is case-insensitive and must identify exactly one repeater. A unique
+key prefix of at least four hex digits can identify entries without names.
+Only full-key-authorized admin DMs can mutate the list. Channel messages and
+non-admin DMs cannot. Busy operations reject edits, ambiguous names reject edits,
+and failed saves roll back the in-memory list. Admin help includes all four commands.
+
+## Rolling stats
+
+`stats` now uses a fixed snapshot sent through the paced multipart reply queue.
+The summary (seen, accepted/ok, sent, fail, RF rx/tx/errors) and command breakdown
+use the same 96-bucket quarter-hour window. Buckets older than the retained window
+are discarded; the oldest partial quarter-hour is excluded, so precision is 15
+minutes and no event older than 24 hours is included. The window uses monotonic
+millisecond deltas, handles timer wrap, and is unaffected by NTP corrections.
+It resets at reboot and does not write per-message statistics to flash.
+
+Only commands with accepted requests appear, ordered by descending count. Each
+percentage is the rounded share of all accepted requests, including admin commands
+and the current stats request; rounded values need not sum to exactly 100%.
+Aliases share a command's count; list low counts under list and neighbors all under
+neighbors. Rejected/cooldown messages do not contribute to command shares. Sent
+counts include each reply page and notifications, not confirmed reception.
+The report's own replies occur after its snapshot and appear in later reports.
+The existing status command and console counters remain lifetime-since-boot values.

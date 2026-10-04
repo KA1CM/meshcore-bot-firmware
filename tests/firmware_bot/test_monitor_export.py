@@ -18,6 +18,12 @@ struct Mesh { Contact c; Contact* lookupContactByPubKey(const uint8_t* key,int) 
 struct RepeaterMonitor { bool storageOK=true;int saves=0;bool save(){++saves;return true;}void rememberNames(); Mesh mesh; bool synced=false; Entry entries[3]{}; size_t count=3; uint32_t now(){return 0;} void exportState(JsonDocument&,bool,bool=true); bool importState(JsonDocument&,bool); };
 '''+method+r'''
 int main(){
+ static_assert(sizeof(Entry)<1024,"Empty note slots must not reserve full text buffers");
+ Entry original;original.notes=std::string(2048,'x');Entry copied=original;
+ original.notes="changed";assert(copied.notes==std::string(2048,'x'));
+ Entry rollback[2];std::copy_n(&copied,1,rollback);copied.notes.clear();
+ assert(rollback[0].notes==std::string(2048,'x'));
+
  assert(validNotes("line\nline\t",10));
  assert(!validNotes("bad\0suffix",10));
  std::string unicode;for(int i=0;i<512;++i)unicode+="\xf0\x9f\xa4\x96";
@@ -46,15 +52,15 @@ int main(){
  // Make the fixture keys unique for a real load; the name tests above use shared lookup prefixes.
  m.entries[1].key[0]=3;
  m.entries[0].learnedLatitude=41150000;m.entries[0].learnedLongitude=-73332460;
- strcpy(m.entries[0].notes,"Node: V4\nAntenna: test <tag>");
+ m.entries[0].notes="Node: V4\nAntenna: test <tag>";
  JsonDocument snapshot;m.exportState(snapshot,true);
  RepeaterMonitor restored;assert(restored.importState(snapshot,true));
  assert(restored.entries[0].learnedLatitude==41150000&&restored.entries[0].learnedLongitude==-73332460);
  assert(restored.entries[0].lastSynced==2000000000&&restored.entries[1].lastSynced==0);
  assert(restored.entries[0].clockCheckedAt==2000000001&&restored.entries[0].clockOffset==-12&&restored.entries[0].clockUncertainty==35);
- assert(!strcmp(restored.entries[0].notes,"Node: V4\nAntenna: test <tag>"));
+ assert(!strcmp(restored.entries[0].notes.c_str(),"Node: V4\nAntenna: test <tag>"));
  JsonDocument notesExport;restored.exportState(notesExport,false);
- assert(!strcmp(notesExport["repeaters"][0]["notes"],restored.entries[0].notes));
+ assert(!strcmp(notesExport["repeaters"][0]["notes"],restored.entries[0].notes.c_str()));
  notesExport["repeaters"][0].remove("notes");
  assert(restored.importState(notesExport,false));assert(restored.entries[0].notes[0]);
  notesExport["repeaters"][0]["notes"]=42;

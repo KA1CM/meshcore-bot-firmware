@@ -113,3 +113,11 @@ ResponseCoordinator/expectation mismatch and is not claimed to pass.
 End-to-end name lookup, radio responsiveness during lookup, and DM/group behavior
 still require live verification. Prior dashboard/check-flow and long-duration
 Wi-Fi/sunrise validation caveats remain documented in REPEATER-MONITOR.md.
+
+## Flashing preference (October 3 update)
+
+Build only when requested. After a successful build, provide the firmware and
+`scripts/flash-fairfield.cmd`; the user flashes manually. Do not automatically
+flash on a DFU message unless the user explicitly requests assistant flashing.
+The launcher detects Fairfield by USB serial, writes only the application at
+0x10000, checks esptool success, and prompts for RESET. It never rebuilds.

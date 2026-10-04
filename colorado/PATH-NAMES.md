@@ -1,6 +1,6 @@
 # Path names
 
-`path` and `path <hashes>` reply with `@sender` on the first line and one hop
+`path` and `path <hashes>` reply with `@[sender]` on the first line and one hop
 per line. Known repeaters use the same short-name rule as `list` and `snr`: preserve
 the first space-delimited word including punctuation and UTF-8 symbols, then
 allow letters, numbers, and spaces in later words until punctuation occurs.
@@ -29,13 +29,17 @@ is only unique within the directory's current knowledge, not proof of identity.
 
 RAM cache: 64 entries, positive names expire after 24 hours, misses/collisions
 after 15 minutes. Network calls are at least 10 seconds apart; failures back off
-for a minute. Replies fall back to local names/hashes after 12 seconds; pending
-DM replies wait for the existing acknowledgement slot, up to 30 seconds total.
+for a minute. Replies fall back to local names/hashes after 28 seconds; pending
+DM replies wait for the existing acknowledgement slot, up to 45 seconds total.
 One internet lookup is allowed at a time; concurrent requests use local results.
 The cache clears on reboot. Wi-Fi and valid system time are required for fresh
 HTTPS lookups. Offline cached results can still be used. No contacts are imported.
 
-The trust anchor is GlobalSign Root CA from the verified current site chain.
+The trust anchor is GTS Root R4 from Google’s official certificate repository,
+verified against the current site using this root alone. This anchors the WE1
+chain directly instead of relying on its cross-sign to GlobalSign. The ESP32
+reported certificate verification flag 0x8 with the former GlobalSign anchor;
+the direct-root change still requires a device test.
 A future CA change or root expiration requires a trust-store update; failures
 retain hash replies, never bypass certificate verification.
 
@@ -53,5 +57,9 @@ Content-Length header, which the original firmware incorrectly skipped.
 DNS uses the standard IPv4 socket resolver in the background worker, retaining
 the analyzer hostname for TLS SNI and certificate validation. Diagnostics now
 distinguish DNS failure, TCP connection failure, and TLS handshake failure.
-One-byte paths reply `@sender 1-byte paths are not supported.` without an
+One-byte paths reply `@[sender] 1-byte paths are not supported.` without an
 internet lookup. Direct zero-hop paths still reply Direct.
+
+TLS handshakes have a 15-second deadline. Diagnostics distinguish a completed
+TCP connection whose TLS handshake times out, and report its elapsed milliseconds.
+This change requires live testing; code 11 alone did not establish the cause.

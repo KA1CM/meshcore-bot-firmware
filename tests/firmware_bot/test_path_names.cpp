@@ -8,19 +8,25 @@ int32_t FirmwareBot::easternUtcOffsetSeconds(uint32_t) { return -14400; }
 #include <cstdio>
 
 int main() {
+  { BotPath::Route direct; direct.width=2; char reply[128];
+    const auto result=BotPath::format(direct,"Celluoid Desktop",reply,sizeof(reply));
+    assert(result.code==BOT_COMMAND_RESULT_OK);
+    assert(!strcmp(reply,"@[Celluoid Desktop]\nDirect"));
+  }
+
   BotPath::Route r; r.width=2; r.count=6;
   for(unsigned i=0;i<6;++i) {r.bytes[2*i]=0xa1; r.bytes[2*i+1]=i; snprintf(r.names[i],33,"Repeater %u",i+1);}
   char out[145];
   auto result=BotPath::format(r,"alice",out,sizeof(out));
   assert(result.code==BOT_COMMAND_RESULT_OK);
-  assert(!strcmp(out,"@alice\nRepeater 1\nRepeater 2\nRepeater 3\nRepeater 4\nRepeater 5\nRepeater 6"));
+  assert(!strcmp(out,"@[alice]\nRepeater 1\nRepeater 2\nRepeater 3\nRepeater 4\nRepeater 5\nRepeater 6"));
   // Unknown/colliding hops retain the complete hash, never an arbitrary name.
   r.names[1][0]=0; r.ambiguous[2]=true;
   BotPath::format(r,"alice",out,sizeof(out));
   assert(strstr(out,"\na101\na102\n"));
   for(unsigned i=0;i<6;++i) {snprintf(r.names[i],33,"Long repeater name number %u",i+1); r.ambiguous[i]=false;}
-  result=BotPath::format(r,"alice",out,128);
-  assert(result.code==BOT_COMMAND_RESULT_OK && result.text_len<128);
+  result=BotPath::format(r,"alice",out,130);
+  assert(result.code==BOT_COMMAND_RESULT_OK && result.text_len<130);
   assert(strstr(out,"\na10"));
   assert(!strcmp(out+strlen(out)-strlen(r.names[5]),r.names[5]));
   // First three names stay intact while only middle names become hashes.
@@ -29,7 +35,7 @@ int main() {
   for(unsigned i=0;i<32;++i) snprintf(r.names[i],33,"Repeater %u",i+1);
   result=BotPath::format(r,"alice",out,100);
   assert(result.code==BOT_COMMAND_RESULT_OK);
-  assert(!strncmp(out,"@alice\nRepeater 1\nRepeater 2\nRepeater 3\n",strlen("@alice\nRepeater 1\nRepeater 2\nRepeater 3\n")));
+  assert(!strncmp(out,"@[alice]\nRepeater 1\nRepeater 2\nRepeater 3\n",strlen("@[alice]\nRepeater 1\nRepeater 2\nRepeater 3\n")));
   assert(strstr(out,"\n...\n") && !strstr(out,"hops omitted"));
   assert(!strcmp(out+strlen(out)-strlen(r.names[31]),r.names[31]));
   // Exhaustive packet budgets and route lengths; protected hops cannot disappear.
@@ -56,14 +62,14 @@ int main() {
     }
   }
   r=BotPath::Route{}; r.width=2;
-  BotPath::format(r,"alice",out,sizeof(out)); assert(!strcmp(out,"@alice\nDirect"));
+  BotPath::format(r,"alice",out,sizeof(out)); assert(!strcmp(out,"@[alice]\nDirect"));
   r.width=1; r.count=2;
   result=BotPath::format(r,"alice",out,sizeof(out));
-  assert(result.code==BOT_COMMAND_RESULT_OK && !strcmp(out,"@alice 1-byte paths are not supported."));
+  assert(result.code==BOT_COMMAND_RESULT_OK && !strcmp(out,"@[alice] 1-byte paths are not supported."));
   result=BotPath::format(r,nullptr,out,sizeof(out));
   assert(result.code==BOT_COMMAND_RESULT_OK && !strcmp(out,"1-byte paths are not supported."));
   char tiny[10]; assert(BotPath::format(r,"alice",tiny,sizeof(tiny)).code==BOT_COMMAND_RESULT_NO_SPACE);
-  r.count=0; BotPath::format(r,"alice",out,sizeof(out)); assert(!strcmp(out,"@alice\nDirect"));
+  r.count=0; BotPath::format(r,"alice",out,sizeof(out)); assert(!strcmp(out,"@[alice]\nDirect"));
   r.width=5; assert(BotPath::format(r,"alice",out,sizeof(out)).code==BOT_COMMAND_RESULT_NO_SPACE);
   char name[33]; BotPath::shortName("Hill Top\nFake hop",name); assert(!strcmp(name,"Hill Top"));
   BotPath::shortName("Repeater 1 [CT]",name); assert(!strcmp(name,"Repeater 1"));

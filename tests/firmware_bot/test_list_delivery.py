@@ -1,7 +1,7 @@
 from pathlib import Path
 import os,subprocess,tempfile
 r=Path(__file__).resolve().parents[2];s=r/'vendor/MeshCore/examples/companion_radio'
-src=(s/'MyMesh.cpp').read_text(encoding='utf-8');method=src[src.index('void MyMesh::sendNextVoltageListPart()'):src.index('void MyMesh::tickBot()')]
+src=(s/'MyMesh.cpp').read_text(encoding='utf-8');method=src[src.index('void MyMesh::sendNextVoltageListPart()'):src.index('void MyMesh::sampleBotStatsWindow()')]
 code=r'''
 #include "BotVoltageList.h"
 #include "BotTypes.h"

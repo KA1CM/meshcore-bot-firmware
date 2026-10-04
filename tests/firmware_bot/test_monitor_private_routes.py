@@ -59,9 +59,9 @@ int main(){
  m.server.body=R"({"key":"0100000000000000000000000000000000000000000000000000000000000000","notes":"Node: V4\nAntenna: test"})";
  m.server.user="gu3st";m.server.password="test-guest";m.notesRoute();assert(m.server.status==403);
  m.server.user="admin";m.server.password="test-admin";m.server.csrf="";m.notesRoute();assert(m.server.status==403);
- m.server.csrf="1";m.notesRoute();assert(m.server.status==200);assert(!strcmp(m.entries[0].notes,"Node: V4\nAntenna: test"));
+ m.server.csrf="1";m.notesRoute();assert(m.server.status==200);assert(!strcmp(m.entries[0].notes.c_str(),"Node: V4\nAntenna: test"));
  m.savesOK=false;m.server.body=R"({"key":"0100000000000000000000000000000000000000000000000000000000000000","notes":"changed"})";
- m.notesRoute();assert(m.server.status==507);assert(!strcmp(m.entries[0].notes,"Node: V4\nAntenna: test"));m.savesOK=true;
+ m.notesRoute();assert(m.server.status==507);assert(!strcmp(m.entries[0].notes.c_str(),"Node: V4\nAntenna: test"));m.savesOK=true;
 
  m.server.body=R"({"all":true,"password":"private-test"})";
  m.server.user="gu3st";m.server.password="test-guest";
