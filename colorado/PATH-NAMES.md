@@ -2,8 +2,8 @@
 
 `path` and `path <hashes>` reply with `@[sender]` on the first line and one hop
 per line. Known repeaters use the same short-name rule as `list` and `snr`: preserve
-the first space-delimited word including punctuation and UTF-8 symbols, then
-allow letters, numbers, and spaces in later words until punctuation occurs.
+punctuation and UTF-8 symbols throughout the name, removing the literal,
+case-sensitive `- FN31` and everything after it. Other grid prefixes remain.
 Names are limited to 24 characters and trailing spaces are removed. Leading
 spaces are ignored. Controls and invalid UTF-8 stop the name. The existing
 32-byte name storage may shorten multibyte names sooner, at a UTF-8 boundary.

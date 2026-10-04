@@ -1,21 +1,14 @@
-# Continue at home — October 3, 2026
+# Continue at home — October 4, 2026
 
-Today's firmware is pushed to KA1CM/MeshCore, branch `meshcore-bot-working`,
-commit `dab98c39`. The parent KA1CM/meshcore-bot-firmware `main` pins that commit.
-Do not reapply the historical patch queue.
+Parent repository: KA1CM/meshcore-bot-firmware, branch `main`.
+Firmware repository: KA1CM/MeshCore, branch `meshcore-bot-working`,
+commit `f88d5541` (admin notes/passwords, named replies and dashboard charts).
+The parent pins the firmware commit. Pull both together; do not reapply the old
+patch queue. Internet problems at work prevented reliable live network testing.
 
 ## Resume safely
 
-Inspect both working trees before updating:
-
-```sh
-git status
-git -C vendor/MeshCore status
-git fetch origin
-git -C vendor/MeshCore fetch origin
-```
-
-Preserve any home changes before proceeding. With clean working trees:
+Inspect both working trees and preserve any home changes first. With clean trees:
 
 ```sh
 git pull --ff-only origin main
@@ -23,101 +16,71 @@ git submodule sync --recursive
 git submodule update --init --recursive
 ```
 
-The submodule uses the KA1CM fork configured in `.gitmodules`. Updating normally
-leaves a detached HEAD at the parent-pinned commit. To continue firmware work,
-record that pinned SHA, switch to the existing `meshcore-bot-working` branch,
-and fast-forward it to the pinned SHA with `git merge --ff-only <pinned-SHA>`.
-If the branch does not exist, create it at the pinned SHA. If it has diverged,
-stop and preserve/reconcile the home work; do not reset or force-push.
+Submodule update normally leaves a detached HEAD. To continue editing, record the
+pinned SHA, switch to `meshcore-bot-working`, and fast-forward that local branch to
+the pinned SHA. If the branch has diverged, preserve/reconcile changes; do not reset
+or force-push. Keep the home's own ignored `platformio.local.ini` and secrets.
 
-Keep the existing home `vendor/MeshCore/platformio.local.ini`. If missing, copy
-`colorado/platformio.monitor.example.ini` there and fill in placeholders locally.
-Real credentials and compiled images are excluded from Git. Windows passwords
-may be represented as C character arrays; a helper that reads these as literal
-strings will fail dashboard authentication. Do not change the password to fix that.
-The saved repeater list, history, and radio settings live on the device.
+## Work completed today
 
-## Today's changes
+- Short repeater names preserve punctuation/UTF-8 throughout and remove exact,
+  case-sensitive `- FN31` and everything after it. Existing 24-character/32-byte
+  limits remain. Other grid prefixes and lowercase `fn31` remain unchanged.
+- Admin DMs: `notes <rpt>` views paged notes; `notes set <rpt> | <text>` replaces
+  notes. No append/clear commands; empty replacements are rejected. Text spaces
+  and newlines are preserved. Notes use the same dashboard storage.
+- Admin DM: `password <rpt> | <passwd>` adds/replaces the bot's private saved login
+  password (1–15 bytes, no controls). It does not change the repeater's password,
+  echo it, or export it. Empty input is rejected.
+- Enable/disable replies use short names, including already-enabled/disabled
+  replies. Add/remove replies also use short names, falling back to `Repeater`
+  if unknown. Remove captures the name before deleting the entry.
+- Stats now says `Last 24h: <n> responses`, followed by descending command
+  percentages. Admin commands and authorized admin help share one `admin` line.
+  Counts represent accepted commands once, regardless of pages/retries.
+- Dashboard: 30 Eastern calendar-day stacked bars and a pie defaulting to the
+  rolling last 24 hours. Clicking/keyboard-selecting a bar switches the pie to
+  that day; the reset button restores last 24 hours. Selection survives refresh.
+- Daily history uses a bounded private NVS store, saved hourly and restored after
+  reboot. History begins after clock synchronization; it cannot backfill old
+  activity. Power loss can lose up to an hour of unsaved daily totals. The rolling
+  24-hour counters still reset at reboot.
+- Latest layout revision aligns the two charts vertically with matching headings,
+  removes the bar-only legend and pie-side table, and adds one horizontal shared
+  legend beneath both charts with selected-period counts/percentages. It wraps
+  on phones. HTML and generated embedded page header are both updated.
 
-- Preserved the user's admin help, advert, check, and sync response edits.
-- Added named path replies using local contacts, then verified HTTPS lookups
-  against analyzer.ctmesh.org for unknown 2-byte and 3-byte prefixes.
-- Names use the first word including special characters, then letters, numbers,
-  and spaces until punctuation; limit 24 characters (existing storage is 32 bytes).
-- First three and last names are protected. Middle hops use hashes when needed,
-  then an explicit `...` if necessary. See PATH-NAMES.md for exact budget handling.
-- One-byte paths reply `@sender 1-byte paths are not supported.`
-- Added persistent last-failure dashboard diagnostics, bounded HTTP body reading
-  without requiring Content-Length, and a socket DNS resolver retaining TLS
-  hostname/certificate verification.
+## Build and device checkpoint
 
-## Device checkpoint — live test still needed
+The firmware before the final shared-legend layout revision built successfully
+for `heltec_v4_companion_radio_usb` and was flashed with hash verification to the
+work board on COM14 (USB serial F8:5B:1B:BF:08:38). Application only, at 0x10000;
+saved settings were preserved. RESET was left to the user.
 
-Stamford Bot is the work test unit at `192.168.0.101` / `mesh-bot.local`.
-Fairfield at home remains yesterday's reference firmware; these are different
-radios/routes. Do not assume Fairfield already contains today's changes.
+**The latest shared-legend layout is not built or flashed.** Build only when asked;
+the user normally uploads manually. A DFU message alone does not authorize
+assistant flashing. The work board and home Fairfield are different devices.
+The Fairfield launcher targets home serial F8:5B:1B:BE:D8:C0, so it must not be used
+unchanged for the work board. Work-specific Git Bash/PowerShell build+upload
+commands are saved in CONTINUE-AT-WORK.md.
 
-The latest application was built and flashed to Stamford successfully with
-checksum verification. The user must press RESET after DFU flashing. No successful
-live internet name lookup has yet been confirmed after the final DNS change.
-Clock synchronization was confirmed by the user. Earlier diagnostics showed
-HTTP connection failed, code -1. DNS failure was inferred from library behavior,
-not proven on the device; the new diagnostics distinguish DNS, TCP, and TLS errors.
+## Validation and remaining checks
 
-Known Stamford path: `ce65,f0d0,b2d9,bfa8`. The directory returned unique names;
-expected reply:
+Focused host tests passed for short names/path budgets, admin list/notes/password
+commands, private credential persistence and rollback, rolling stats, daily
+history retention/persistence/retry, real dashboard JSON export, and acknowledged
+multipart delivery. Browser checks with synthetic data passed for click/keyboard
+selection, reset, zero/missing history, single-slice pie, automatic refresh,
+shared legend updates, chart alignment and phone layout. The firmware before the
+last layout change built successfully. The old broad `run_tests.py` runner remains
+blocked by its reference to missing `ResponseCoordinator.cpp`.
 
-```text
-@jim
-Stratford Ctr
-TheWatcherInTheWater
-Canoe Hill
-North Stamford
-```
+On device, validate the new admin DMs, stats, and real dashboard history after
+building/uploading the latest layout. No live internet-name-lookup success was
+verified at work today because of the connection problems.
 
-Next: test a 2-byte path after reset and inspect Path lookup diagnostics if hashes
-remain. One-byte requests intentionally reject and do not test internet lookup.
-The RAM cache clears at reboot; failures back off for 60 seconds. Preserve the
-last-failure stage/code when reporting results. Automated dashboard reads received
-401; the user's dashboard access works.
-
-Latest flashed application: `meshcore-bot-heltec-v4-usb-dns-fix-v2.bin`
-(1,446,208 bytes), SHA256:
-`b67ff2e2c3b110bb8a8ec6306bf2f4e65f960786e914b1330e7f5130ec4313cd`.
-Binaries are not committed; rebuild from this checkpoint and local configuration.
-
-```sh
-python scripts/build-monitor-page.py
-pio run -d vendor/MeshCore -e heltec_v4_companion_radio_usb
-```
-
-Flash only the application `firmware.bin` at offset `0x10000` on the existing
-ESP32-S3 board, preserving filesystem/settings. Do not erase flash or upload a
-filesystem. Work-laptop ports were DFU COM14 and application COM15; rediscover
-ports at home. Report flash verification and ask the user to press RESET.
-
-## Validation
-
-Full USB firmware build, dashboard JavaScript syntax check, path tests,
-signal tests, list tests, and Git whitespace checks passed. Focused test commands:
-
-```sh
-python tests/firmware_bot/run_path_tests.py
-python tests/firmware_bot/run_sig_tests.py
-python tests/firmware_bot/test_list_command.py
-```
-
-Host tests require a C++ compiler; path tests use the PlatformIO-installed
-ArduinoJson headers. The older broad runner has a pre-existing
-ResponseCoordinator/expectation mismatch and is not claimed to pass.
-End-to-end name lookup, radio responsiveness during lookup, and DM/group behavior
-still require live verification. Prior dashboard/check-flow and long-duration
-Wi-Fi/sunrise validation caveats remain documented in REPEATER-MONITOR.md.
-
-## Flashing preference (October 3 update)
-
-Build only when requested. After a successful build, provide the firmware and
-`scripts/flash-fairfield.cmd`; the user flashes manually. Do not automatically
-flash on a DFU message unless the user explicitly requests assistant flashing.
-The launcher detects Fairfield by USB serial, writes only the application at
-0x10000, checks esptool success, and prompts for RESET. It never rebuilds.
+The user observed a low-voltage report after manual `check <rpt>`. Current source
+only schedules that report at the end of an automatic sunrise run. A pending
+report waits until the monitor is idle, or unfinished scheduled checks may resume
+after a manual check. Repeated reports after every check were not reproduced or
+fixed; inspect running firmware/state at home before claiming a root cause.

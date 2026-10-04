@@ -8,14 +8,16 @@ mock = r"""
 #include <cstring>
 class Preferences {
 public:
- inline static std::vector<unsigned char> bytes;
- inline static bool fail = false;
+ static std::vector<unsigned char> bytes;
+ static bool fail;
  bool begin(const char*, bool) { return true; }
  bool isKey(const char*) { return !bytes.empty(); }
  size_t getBytesLength(const char*) { return bytes.size(); }
  size_t getBytes(const char*, void* p, size_t n) { if(n!=bytes.size())return 0;memcpy(p,bytes.data(),n);return n; }
  size_t putBytes(const char*, const void* p, size_t n) { if(fail)return 0;const auto* b=(const unsigned char*)p;bytes.assign(b,b+n);return n; }
 };
+std::vector<unsigned char> Preferences::bytes;
+bool Preferences::fail=false;
 """
 harness = r"""
 #include "MonitorCredentials.h"

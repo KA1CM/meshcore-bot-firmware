@@ -72,19 +72,23 @@ int main() {
   r.count=0; BotPath::format(r,"alice",out,sizeof(out)); assert(!strcmp(out,"@[alice]\nDirect"));
   r.width=5; assert(BotPath::format(r,"alice",out,sizeof(out)).code==BOT_COMMAND_RESULT_NO_SPACE);
   char name[33]; BotPath::shortName("Hill Top\nFake hop",name); assert(!strcmp(name,"Hill Top"));
-  BotPath::shortName("Repeater 1 [CT]",name); assert(!strcmp(name,"Repeater 1"));
+  BotPath::shortName("Repeater 1 [CT]",name); assert(!strcmp(name,"Repeater 1 [CT]"));
   BotPath::shortName("*Hilltop-Solar",name); assert(!strcmp(name,"*Hilltop-Solar"));
   BotPath::shortName("\xe2\x98\x80\xef\xb8\x8f Hilltop [CT]",name);
-  assert(!strcmp(name,"\xe2\x98\x80\xef\xb8\x8f Hilltop"));
+  assert(!strcmp(name,"\xe2\x98\x80\xef\xb8\x8f Hilltop [CT]"));
   BotPath::shortName("ABCDEFGHIJKLMNOPQRSTUVWXYZ",name); assert(!strcmp(name,"ABCDEFGHIJKLMNOPQRSTUVWX"));
   BotPath::shortName("\xf0\x9f\x93\xa1" "ABCDEFGHIJKLMNOPQRSTUVWXY",name);
   assert(!strcmp(name,"\xf0\x9f\x93\xa1" "ABCDEFGHIJKLMNOPQRSTUVW"));
   BotPath::shortName("\nHilltop",name); assert(!name[0]);
   BotPath::shortName("\xf0\x9f",name); assert(!name[0]);
   BotPath::shortName("",name); assert(!name[0]);
-  BotPath::shortName("[CT]/Hill-1 Repeater [FN31]",name); assert(!strcmp(name,"[CT]/Hill-1 Repeater"));
-  BotPath::shortName("Hilltop-Solar West-Side",name); assert(!strcmp(name,"Hilltop-Solar West"));
+  BotPath::shortName("[CT]/Hill-1 Repeater [FN31]",name); assert(!strcmp(name,"[CT]/Hill-1 Repeater [FN"));
+  BotPath::shortName("Hilltop-Solar West-Side",name); assert(!strcmp(name,"Hilltop-Solar West-Side"));
   BotPath::shortName("  *Hill/Top* Ridge",name); assert(!strcmp(name,"*Hill/Top* Ridge"));
+  BotPath::shortName("Hill West - FN31jf extra",name); assert(!strcmp(name,"Hill West"));
+  BotPath::shortName("Hill West - FN32ab",name); assert(!strcmp(name,"Hill West - FN32ab"));
+  BotPath::shortName("Hill West - fn31jf",name); assert(!strcmp(name,"Hill West - fn31jf"));
+  BotPath::shortName("- FN31jf",name); assert(!name[0]);
   char bounded[35]; memset(bounded,'!',sizeof(bounded));
   BotPath::shortName("\xf0\x9f\x93\xa1\xf0\x9f\x93\xa1\xf0\x9f\x93\xa1\xf0\x9f\x93\xa1"
                      "\xf0\x9f\x93\xa1\xf0\x9f\x93\xa1\xf0\x9f\x93\xa1\xf0\x9f\x93\xa1\xf0\x9f\x93\xa1",bounded);

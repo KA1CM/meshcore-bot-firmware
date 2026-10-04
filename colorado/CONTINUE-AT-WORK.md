@@ -1,5 +1,12 @@
 # Continue at work — October 4, 2026
 
+Latest work checkpoint: firmware `f88d5541` on `meshcore-bot-working`. See
+CONTINUE-AT-HOME.md for the complete October 4 handoff, tests and deployment
+status. The chart shared-legend layout is newer than the last work-board flash
+and still needs a requested build/upload. The earlier morning checkpoint below
+is retained as background.
+
+
 ## Checkpoint and deployment
 
 Both repositories should be pushed together: parent `main`, vendor
@@ -78,3 +85,24 @@ heltec_v4_companion_radio_usb. No October 4 firmware build has been requested.
 
 The suggestion to move lookup diagnostics into a collapsed admin-only section
 has NOT been implemented or explicitly approved yet.
+
+## Work PC manual build and upload command
+
+For Git Bash on this work PC, use the `Ting` user directory and explicitly select
+`vendor/MeshCore`, where `platformio.ini` lives. This command builds and uploads;
+run it only when you intend both actions. COM14 is the work board's current DFU
+port (USB serial F8:5B:1B:BF:08:38); check the port if Windows assigns another.
+
+```bash
+/c/Users/Ting/.platformio/penv/Scripts/platformio.exe run \
+  --project-dir /c/MeshCore/KA1CM-meshcore-bot-firmware/vendor/MeshCore \
+  -e heltec_v4_companion_radio_usb \
+  -t upload \
+  --upload-port COM14
+```
+
+For PowerShell, use its continuation character (backtick), or this one-line form:
+
+```powershell
+& "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe" run --project-dir "C:\MeshCore\KA1CM-meshcore-bot-firmware\vendor\MeshCore" -e heltec_v4_companion_radio_usb -t upload --upload-port COM14
+```

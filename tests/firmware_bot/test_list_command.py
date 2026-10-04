@@ -17,7 +17,7 @@ int main(){
  strcpy(cmd.args,"list");cmd.args_len=4;BotCommands::executeCommand(cmd,ctx,text,sizeof(text));
  assert(strstr(text,"list: list of all managed repeaters")&&strstr(text,"list low:"));
  MonitorCore::Entry entries[32]{};char names[32][33]{};
- const char* full[]={"Chestnut Hill - FN31jf","FlexSolar","North-Stamford","North-Stamford / Stamford","!Symbol"};
+ const char* full[]={"Chestnut Hill - FN31jf","FlexSolar","North-Stamford","North-Stamford - FN31ab","!Symbol"};
  for(size_t i=0;i<32;++i){entries[i].enabled=true;entries[i].key[0]=i+1;BotVoltageList::shortName(i<5?full[i]:"LongRepeaterNameWith32CharactersX suffix",entries[i].key,names[i]);entries[i].readings[0].timestamp=2000000000;entries[i].readings[0].result=MonitorCore::Ok;entries[i].readings[0].millivolts=4199;}
  assert(!strcmp(names[0],"Chestnut Hill")&&!strcmp(names[2],"North-Stamford")&&!strcmp(names[4],"!Symbol"));
  char readable[33];BotVoltageList::shortName("North Stamford   - FN31fd",entries[0].key,readable);assert(!strcmp(readable,"North Stamford"));

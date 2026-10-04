@@ -163,7 +163,7 @@ Modern login replies accept the 13-byte payload plus up to 15 zero-padding bytes
 
 A successful modern battery-check login immediately persists its clock estimate and measurement time (admin or guest access), independently of the later voltage response. A voltage timeout does not erase that estimate. Legacy logins without a usable timestamp leave prior clock measurements unchanged. Storage failure restores the prior measurement and stops the check.
 
-The radio command `list` (also `!list` or `/list` under the normal bot channel rules) returns all configured repeaters' latest stored check results, including disabled entries. It does not poll repeaters. Names retain ASCII letters, digits and internal spaces up to the first punctuation/special character, trimming spaces before that character (for example, `Chestnut Hill - FN31jf` becomes `Chestnut Hill`); empty prefixes fall back to an eight-digit key prefix, and duplicate short names gain a key suffix. Voltages are rounded to two decimal places. The latest failed/missing reading is `N/A`, rather than silently showing an older voltage. Replies headed with the current page and total (for example, `1/3`, `2/3`, `3/3`) split only between entries and are sent at least five seconds apart; DM parts wait for the existing acknowledgement/retry flow. One list snapshot can be queued at a time, with bounded send failures and a ten-minute expiry. `help`, `cmd`, and `help list` include the command. Version-7 bot preferences migrate to version 8 with `list` enabled while retaining other settings and command choices.
+The radio command `list` (also `!list` or `/list` under the normal bot channel rules) returns all configured repeaters' latest stored check results, including disabled entries. It does not poll repeaters. Names retain punctuation and UTF-8 symbols, removing the literal, case-sensitive `- FN31` and everything after it, then trimming trailing spaces (within the 24-character/32-byte limit) (for example, `Chestnut Hill - FN31jf` becomes `Chestnut Hill`); empty prefixes fall back to an eight-digit key prefix, and duplicate short names gain a key suffix. Voltages are rounded to two decimal places. The latest failed/missing reading is `N/A`, rather than silently showing an older voltage. Replies headed with the current page and total (for example, `1/3`, `2/3`, `3/3`) split only between entries and are sent at least five seconds apart; DM parts wait for the existing acknowledgement/retry flow. One list snapshot can be queued at a time, with bounded send failures and a ten-minute expiry. `help`, `cmd`, and `help list` include the command. Version-7 bot preferences migrate to version 8 with `list` enabled while retaining other settings and command choices.
 
 Dashboard repeater rows, public list exports, and radio `list` replies sort west to east by learned contact GPS longitude. Missing, invalid, or unset (0,0) locations sort last; equal longitudes and unknown entries retain saved relative order. Sorting does not rearrange the live monitor entries or retarget an active check. Password flags and the active-row indicator are mapped by full key after sorting.
 
@@ -196,8 +196,9 @@ and failed saves roll back the in-memory list. Admin help includes all four comm
 ## Rolling stats
 
 `stats` now uses a fixed snapshot sent through the paced multipart reply queue.
-The summary (seen, accepted/ok, sent, fail, RF rx/tx/errors) and command breakdown
-use the same 96-bucket quarter-hour window. Buckets older than the retained window
+The response total and command percentages use the same 96-bucket quarter-hour
+window. Admin commands are combined under admin; raw command counts and RF
+diagnostics are omitted from this reply. Buckets older than the retained window
 are discarded; the oldest partial quarter-hour is excluded, so precision is 15
 minutes and no event older than 24 hours is included. The window uses monotonic
 millisecond deltas, handles timer wrap, and is unaffected by NTP corrections.
@@ -207,7 +208,75 @@ Only commands with accepted requests appear, ordered by descending count. Each
 percentage is the rounded share of all accepted requests, including admin commands
 and the current stats request; rounded values need not sum to exactly 100%.
 Aliases share a command's count; list low counts under list and neighbors all under
-neighbors. Rejected/cooldown messages do not contribute to command shares. Sent
-counts include each reply page and notifications, not confirmed reception.
-The report's own replies occur after its snapshot and appear in later reports.
+neighbors. Rejected/cooldown messages do not contribute to command shares. The
+response total counts accepted commands once, rather than counting pages, retries
+or notifications; it does not represent confirmed reception.
 The existing status command and console counters remain lifetime-since-boot values.
+
+### Notes over admin DM
+
+- `notes <rpt>` views the same saved notes as the dashboard, in acknowledged pages.
+- `notes set <rpt> | <text>` replaces all notes. Text after the first `|` retains
+  spaces and line breaks (one optional space immediately after `|` is omitted).
+  Empty replacement text is rejected; append and clear commands are not supported.
+
+Both require admin command permission and a unique partial name or key prefix of
+at least four hex digits. Disabled repeaters are included. Changes are confirmed
+only after saving, with rollback on failure. The existing 512-character/2048-byte
+storage limit remains; a replacement must fit in one radio DM, so longer edits
+use the dashboard. Truncated received DMs cannot change notes. Notes remain visible
+to dashboard guests and included in exports.
+
+### Password over admin DM
+
+`password <rpt> | <passwd>` adds or replaces the bot's privately stored login
+password for one managed repeater, including disabled entries. Requires admin
+command permission and a unique partial repeater name or key prefix of at least
+four hex digits. The first `|` separates the target from the password; one optional
+space after it is omitted, and all remaining password bytes are preserved.
+Passwords must be nonempty, at most 15 bytes, and contain no control characters.
+Busy operations or unavailable private storage reject the change. A failed save
+keeps the previous password; success clears cached login confirmation and replies
+`Password saved`, without echoing the password. This updates the bot's saved
+credential; it does not change the remote repeater's own password. Credentials
+remain excluded from notes, dashboard/list JSON and exports. Admin help is paged.
+
+Enable/disable admin replies use the current short repeater name, for example
+`FlexSolar 915 is disabled` or `Chestnut Hill is enabled`. Requests for the
+existing state reply `<short name> is already enabled/disabled`.
+
+Add/remove admin replies also use the short repeater name, falling back to
+`Repeater` when no usable name is known. Remove retains the name for its reply
+before deleting the entry. Duplicate-add and password-cleanup failure replies
+also identify the repeater.
+
+Stats replies use `Last 24h: <total> responses`, followed by command percentages
+in descending order. Admin DM commands (including admin help) share one `admin`
+category. Each accepted command counts once, rather than counting individual
+radio pages/retries. Percentages are rounded to whole numbers. The rolling
+15-minute buckets and reset-on-reboot behavior are unchanged. RF diagnostics
+and per-command raw counts are omitted from this reply.
+
+### Dashboard command charts
+
+The dashboard includes a 30-day stacked bar chart, split by command category,
+and a pie chart showing the rolling last 24 hours by default. Selecting a daily
+bar (click, or Tab then Enter/Space) changes the pie and the shared count/percentage legend
+to that Eastern calendar day. `Last 24 hours` resets the selection. Selection
+survives automatic refresh. Admin commands, including admin help, use one admin
+category. Counts follow the radio stats rule: one accepted command, regardless
+of response pages or retries. No sender identity, message text, notes or passwords
+are stored in chart history. Both dashboard guests and admins can view charts.
+
+Daily totals use a bounded 30-day ring in private NVS, saved at most hourly and
+retried after failed writes. Unexpected power loss can lose up to an hour of
+unsaved daily totals. History starts when this firmware first synchronizes its clock;
+older days are shown as unavailable, while recorded empty days show zero. The
+first recorded day and today may be partial. Daily history survives reboot; the
+rolling 24-hour chart still resets at reboot and uses 15-minute buckets. Charts
+are embedded SVG with no external scripts or network dependencies. Narrow
+screens scroll the daily bars and place the pie below them.
+
+The daily bars and pie are vertically aligned beneath matching period/total
+headings. A single horizontal legend below both charts shows the selected pie
+period's command counts and percentages; it wraps on narrow screens.
