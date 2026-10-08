@@ -20,23 +20,30 @@ int main() {
   auto result=BotPath::format(r,"alice",out,sizeof(out));
   assert(result.code==BOT_COMMAND_RESULT_OK);
   assert(!strcmp(out,"@[alice]\nRepeater 1\nRepeater 2\nRepeater 3\nRepeater 4\nRepeater 5\nRepeater 6"));
+  { BotPath::Route missing;missing.width=2;missing.count=6;
+    for(int i=0;i<6;++i)missing.bytes[2*i+1]=i;
+    char reply[80];auto result=BotPath::format(missing,nullptr,reply,sizeof(reply));
+    assert(result.code==BOT_COMMAND_RESULT_OK&&!strcmp(reply,"0000.\n0001.\n0002.\n0003.\n0004.\n0005"));
+    char exact[sizeof(reply)];const size_t capacity=strlen(reply)+1;
+    assert(BotPath::format(missing,nullptr,exact,capacity).code==BOT_COMMAND_RESULT_OK);
+    assert(strlen(exact)<capacity);
+  }
   // Unknown/colliding hops retain the complete hash, never an arbitrary name.
   r.names[1][0]=0; r.ambiguous[2]=true;
   BotPath::format(r,"alice",out,sizeof(out));
-  assert(strstr(out,"\na101\na102\n"));
+  assert(strstr(out,"\na101.\na102\n"));
   for(unsigned i=0;i<6;++i) {snprintf(r.names[i],33,"Long repeater name number %u",i+1); r.ambiguous[i]=false;}
   result=BotPath::format(r,"alice",out,130);
   assert(result.code==BOT_COMMAND_RESULT_OK && result.text_len<130);
-  assert(strstr(out,"\na10"));
+  assert(strstr(out,"\na10") && !strchr(out,'~'));
   assert(!strcmp(out+strlen(out)-strlen(r.names[5]),r.names[5]));
-  // First three names stay intact while only middle names become hashes.
-  for(unsigned i=0;i<3;++i) assert(strstr(out,r.names[i]));
   r=BotPath::Route{}; r.width=2; r.count=32;
   for(unsigned i=0;i<32;++i) snprintf(r.names[i],33,"Repeater %u",i+1);
   result=BotPath::format(r,"alice",out,100);
   assert(result.code==BOT_COMMAND_RESULT_OK);
   assert(!strncmp(out,"@[alice]\nRepeater 1\nRepeater 2\nRepeater 3\n",strlen("@[alice]\nRepeater 1\nRepeater 2\nRepeater 3\n")));
   assert(strstr(out,"\n...\n") && !strstr(out,"hops omitted"));
+  assert(strstr(out,"Repeater 5\n...")!=nullptr);
   assert(!strcmp(out+strlen(out)-strlen(r.names[31]),r.names[31]));
   // Exhaustive packet budgets and route lengths; protected hops cannot disappear.
   for(unsigned width=2;width<=4;++width) for(unsigned count=1;count<=64/width;++count) {
@@ -48,16 +55,19 @@ int main() {
       assert(result.code==BOT_COMMAND_RESULT_OK);
       assert(result.text_len==strlen(out) && result.text_len<capacity);
       const char* line=strchr(out,'\n')+1;
-      for(unsigned i=0;i<3 && i<count;++i) {
+      for(unsigned i=0;i<5 && i<count;++i) {
         const char* end=strchr(line,'\n');
         const size_t len=end ? (size_t)(end-line) : strlen(line);
         const size_t original=strlen(r.names[i]);
         assert(len>=4);
         if(len==original) assert(!strncmp(line,r.names[i],len));
-        else { assert(len<original && line[len-1]=='~'); assert(!strncmp(line,r.names[i],len-1)); }
+        else { char expected[9];BotPath::hash(r,i,expected);assert(len==strlen(expected));assert(!strncmp(line,expected,len)); }
+        assert(!memchr(line,'~',len));
         line=end ? end+1 : line+len;
       }
-      assert(!strcmp(out+strlen(out)-strlen(r.names[count-1]),r.names[count-1]));
+      const char* finalLine=strrchr(out,'\n');finalLine=finalLine?finalLine+1:out;
+      char finalHash[9];BotPath::hash(r,count-1,finalHash);
+      assert(!strcmp(finalLine,r.names[count-1])||!strcmp(finalLine,finalHash));
       if(capacity<sizeof(out)) assert(out[capacity]=='!');
     }
   }
@@ -76,19 +86,36 @@ int main() {
   BotPath::shortName("*Hilltop-Solar",name); assert(!strcmp(name,"*Hilltop-Solar"));
   BotPath::shortName("\xe2\x98\x80\xef\xb8\x8f Hilltop [CT]",name);
   assert(!strcmp(name,"\xe2\x98\x80\xef\xb8\x8f Hilltop [CT]"));
-  BotPath::shortName("ABCDEFGHIJKLMNOPQRSTUVWXYZ",name); assert(!strcmp(name,"ABCDEFGHIJKLMNOPQRSTUVWX"));
+  BotPath::shortName("ABCDEFGHIJKLMNOPQRSTUVWXYZ",name); assert(!strcmp(name,"ABCDEFGHIJKLMNOPQRST"));
   BotPath::shortName("\xf0\x9f\x93\xa1" "ABCDEFGHIJKLMNOPQRSTUVWXY",name);
-  assert(!strcmp(name,"\xf0\x9f\x93\xa1" "ABCDEFGHIJKLMNOPQRSTUVW"));
+  assert(!strcmp(name,"\xf0\x9f\x93\xa1" "ABCDEFGHIJKLMNOPQRS"));
   BotPath::shortName("\nHilltop",name); assert(!name[0]);
   BotPath::shortName("\xf0\x9f",name); assert(!name[0]);
   BotPath::shortName("",name); assert(!name[0]);
-  BotPath::shortName("[CT]/Hill-1 Repeater [FN31]",name); assert(!strcmp(name,"[CT]/Hill-1 Repeater [FN"));
-  BotPath::shortName("Hilltop-Solar West-Side",name); assert(!strcmp(name,"Hilltop-Solar West-Side"));
+  BotPath::shortName("[CT]/Hill-1 Repeater [FN31]",name); assert(!strcmp(name,"[CT]/Hill-1"));
+  BotPath::shortName("Hilltop-Solar West-Side",name); assert(!strcmp(name,"Hilltop-Solar"));
   BotPath::shortName("  *Hill/Top* Ridge",name); assert(!strcmp(name,"*Hill/Top* Ridge"));
   BotPath::shortName("Hill West - FN31jf extra",name); assert(!strcmp(name,"Hill West"));
   BotPath::shortName("Hill West - FN32ab",name); assert(!strcmp(name,"Hill West - FN32ab"));
-  BotPath::shortName("Hill West - fn31jf",name); assert(!strcmp(name,"Hill West - fn31jf"));
+  BotPath::shortName("Hill West - fn31jf",name); assert(!strcmp(name,"Hill West"));
   BotPath::shortName("- FN31jf",name); assert(!name[0]);
+  BotPath::shortName("Fn31jf Chestnut Hill",name); assert(!strcmp(name,"Chestnut Hill"));
+  BotPath::shortName("Hill fn31AB Solar",name); assert(!strcmp(name,"Hill Solar"));
+  BotPath::shortName("Hill FN31xyz fn31 Solar",name); assert(!strcmp(name,"Hill Solar"));
+  BotPath::shortName("Hill xfn31 FN32ab",name); assert(!strcmp(name,"Hill xfn31 FN32ab"));
+  BotPath::shortName("fn31",name); assert(!name[0]);
+  BotPath::shortName("f",name); assert(!strcmp(name,"f"));
+  BotPath::shortName("North Stamford Solar Repeater",name); assert(!strcmp(name,"North Stamford"));
+  BotPath::shortName("1234567890 1234567890 more",name); assert(!strcmp(name,"1234567890"));
+  BotPath::shortName("1234567890 1234567890",name); assert(!strcmp(name,"1234567890"));
+  BotPath::shortName("123456789 1234567890",name); assert(!strcmp(name,"123456789 1234567890"));
+  BotPath::shortName("123456789 1234567890 extra",name); assert(!strcmp(name,"123456789"));
+  BotPath::shortName("1234567890 12345678 more",name); assert(!strcmp(name,"1234567890 12345678"));
+  BotPath::shortName("123456789 1234567890 - FN31ab",name); assert(!strcmp(name,"123456789 1234567890"));
+  BotPath::shortName("123456789 1234567890   ",name); assert(!strcmp(name,"123456789 1234567890"));
+  BotPath::shortName("ABCDEFGHIJKLMNOPQRSTUV extra",name); assert(!name[0]);
+
+
   char bounded[35]; memset(bounded,'!',sizeof(bounded));
   BotPath::shortName("\xf0\x9f\x93\xa1\xf0\x9f\x93\xa1\xf0\x9f\x93\xa1\xf0\x9f\x93\xa1"
                      "\xf0\x9f\x93\xa1\xf0\x9f\x93\xa1\xf0\x9f\x93\xa1\xf0\x9f\x93\xa1\xf0\x9f\x93\xa1",bounded);
@@ -99,7 +126,7 @@ int main() {
   strcpy(command.args,"b431d2,17fdbb"); command.args_len=strlen(command.args);
   assert(BotCommands::pathRoute(command,context,r) && r.width==3 && r.count==2);
   result=BotCommands::executeCommand(command,context,out,sizeof(out));
-  assert(!strcmp(out,"b431d2\n17fdbb"));
+  assert(!strcmp(out,"b431d2.\n17fdbb."));
   strcpy(command.args,"b431d217fdbb"); command.args_len=strlen(command.args);
   assert(BotCommands::pathRoute(command,context,r) && r.count==2);
   strcpy(command.args,"b431,17fd"); command.args_len=strlen(command.args);

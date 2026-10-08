@@ -1,77 +1,82 @@
 [
   {
-    "name": "North Stamford",
-    "key": "BFA8321263F26B4E2927EF734486683C1F85F4A321335415C442F647D57E3139",
-    "notes": "CoreBell\nAntenna: 8dB\nBoard: v4\nFirmware: PS17.1\nRXPS: 10"
-  },
-  {
-    "name": "Canoe Hill",
-    "key": "B2D9502597B8BEC3CBBD4174ADB98C35F78C3C42F88C6066CDA921698C8852FD",
-    "notes": "CoreBell\nAntenna: Sleeve Dipole\nBoard: 114\nFirmware: PS17.1\nRXPS: 10"
-  },
-  {
-    "name": "Brookside",
-    "key": "D175E1B7EBC88E868C6AAC9370E7667CB4D26CD97D00715DB3E527E3CEDB97DB",
-    "notes": "CoreBell\nAntenna: Sleeve Dipole\nBoard: 114\nFirmware: PS16\nRXPS:"
-  },
-  {
-    "name": "Bradley Park",
-    "key": "AAC3880467B754FEC82ED8CAD9149B8A3453BC594A605689435CADCB64980196",
-    "notes": "CoreBell\nAntenna:\nBoard: 114\nFirmware: PS17.1.3\nRXPS: M"
-  },
-  {
-    "name": "Bedford School",
-    "key": "45DD59E42B9BC139EF41B72156F3F014A7770ABC514D70227E3DA040F0195CB8",
-    "notes": "CoreBell\nAntenna: 5.8 dB\nBoard: v4\nFirmware: PS17.1\nRXPS: 10"
-  },
-  {
-    "name": "Powells Hill",
-    "key": "42EE465A0AD245D19FBFF67E1C2B22B7688E7FFF35CDD5381F23667A98B9C444",
-    "notes": "CoreBell\nAntenna: GP-Abree\nBoard: 114\nFirmware: PS17.1.3\nRXPS: B"
-  },
-  {
-    "name": "Ernest Park",
-    "key": "8D65DEC99DB1E496CED27DABF97415A7C68CEF9892274D6A4655AB6F663732C5",
-    "notes": "CoreBell\nAntenna:\nBoard: 114\nFirmware: PS17.1\nRXPS: 10"
-  },
-  {
-    "name": "Chestnut Hill",
-    "key": "7C4F538695DEC65C503820AF4FB5A8BF81EC41E62ECB89156E3AE5E1FD81AAE8",
-    "notes": "FlexSolar\nAntenna: Sleeve Dipole\nBoard: v4\nFirmware: PS17.1.3\nRXPS: B"
-  },
-  {
-    "name": "Trumbull Mall",
-    "key": "2DA63C57D3F58874834B0A63F9867FEC12AC066153B06A069E85AEE0032E9528",
-    "notes": "JunctionBox\nAntenna: 10dB\nBoard: v4\nFirmware: PS17.1.3\nRXPS: B"
-  },
-  {
-    "name": "PeakMesh Black",
-    "key": "2AA67C62C0F5433D6EE9A8215406D80832A0DB1A61949652D413F18CEB6A045F",
-    "notes": "PeakMesh\nAntenna: Alpha-915\nBoard: RAK\nFirmware: PS17.1.3\nRXPS: B"
-  },
-  {
-    "name": "PeakMesh Green",
-    "key": "312DB83B24D02BC8A24FD0DD041EDDFB7A3848F35C1295C0E68D74E81CD7BE71",
-    "notes": "PeakMesh\nAntenna: Alpha-915\nBoard: RAK\nFirmware: PS17.1.3\nRXPS: M"
-  },
-  {
-    "name": "Corebell Black",
-    "key": "CBDF35B9CE3AB8D89D0267E201ABC44C0502B196FE7CC6DC9942E5B92971DE64",
-    "notes": "CoreBell\nAntenna: GP-Abree\nBoard: 114\nFirmware: PS17.1.3\nRXPS: M"
-  },
-  {
-    "name": "Corebell 8 dB",
-    "key": "D7F8AE67E65D3FDC6030D943024649F36B39C22BE2A4EC1A0C6B65BF5D48BE5C",
-    "notes": "CoreBell\nAntenna: 8dB\nBoard: 114\nFirmware: PS17.1.3\nRXPS: B"
-  },
-  {
-    "name": "Big Corebell",
-    "key": "74C5ACFC7DBCB672125D17982B77EB1E0DA918A3E9F9DC1A81201B8057175B65",
-    "notes": "CoreBell\nAntenna: GP-Abree\nBoard: 114\nFirmware: PS17.1.3\nRXPS: M"
-  },
-  {
-    "name": "FlexSolar",
     "key": "9581A923362BF9E85893B5EC865E86833BE09F084A39221BBDEE09F85C496BD2",
-    "notes": "FlexSolar\nAntenna: GP-Abree\nBoard: v4\nFirmware: PS17.1.3\nRXPS: M"
+    "name": "North Stamford - FN31fd",
+    "notes": "Enclosure: FlexSolar\nAntenna: GP-Abree\nBoard: v4\nFirmware: PS17.1.3\nRXPS: B"
+  },
+  {
+    "key": "B2D9502597B8BEC3CBBD4174ADB98C35F78C3C42F88C6066CDA921698C8852FD",
+    "name": "Canoe Hill - FN31gd",
+    "notes": "Enclosure: CoreBell\nAntenna: Sleeve Dipole\nBoard: 114\nFirmware: PS17.1\nRXPS: 10"
+  },
+  {
+    "key": "AAC3880467B754FEC82ED8CAD9149B8A3453BC594A605689435CADCB64980196",
+    "name": "Bradley Park - FN31ge",
+    "notes": "Enclosure: CoreBell\nAntenna:\nBoard: 114\nFirmware: PS17.1.3\nRXPS: M"
+  },
+  {
+    "key": "D175E1B7EBC88E868C6AAC9370E7667CB4D26CD97D00715DB3E527E3CEDB97DB",
+    "name": "Brookside - FN31gc",
+    "notes": "Enclosure: CoreBell\nAntenna: Sleeve Dipole\nBoard: 114\nFirmware: PS16\nRXPS:"
+  },
+  {
+    "key": "42EE465A0AD245D19FBFF67E1C2B22B7688E7FFF35CDD5381F23667A98B9C444",
+    "name": "Powells Hill - FN31hf",
+    "notes": "Enclosure: CoreBell\nAntenna: GP-Abree\nBoard: 114\nFirmware: PS17.1.3\nRXPS: B"
+  },
+  {
+    "key": "45DD59E42B9BC139EF41B72156F3F014A7770ABC514D70227E3DA040F0195CB8",
+    "name": "Bedford School - FN31id",
+    "notes": "Enclosure: CoreBell\nAntenna: 5.8 dB\nBoard: v4\nFirmware: PS17.1\nRXPS: 10"
+  },
+  {
+    "key": "8D65DEC99DB1E496CED27DABF97415A7C68CEF9892274D6A4655AB6F663732C5",
+    "name": "Ernest Park - FN31ie",
+    "notes": "Enclosure: CoreBell\nAntenna:\nBoard: 114\nFirmware: PS17.1\nRXPS: 10"
+  },
+  {
+    "key": "7C4F538695DEC65C503820AF4FB5A8BF81EC41E62ECB89156E3AE5E1FD81AAE8",
+    "name": "Chestnut Hill - FN31jf",
+    "notes": "Enclosure: FlexSolar\nAntenna: Sleeve Dipole\nBoard: v4\nFirmware: PS17.1.3\nRXPS: B"
+  },
+  {
+    "key": "2DA63C57D3F58874834B0A63F9867FEC12AC066153B06A069E85AEE0032E9528",
+    "name": "Trumbull Mall",
+    "notes": "Enclosure: JunctionBox\nAntenna: 10dB\nBoard: v4\nFirmware: PS17.1.3\nRXPS: B"
+  },
+  {
+    "key": "2AA67C62C0F5433D6EE9A8215406D80832A0DB1A61949652D413F18CEB6A045F",
+    "name": "PeakMesh Black",
+    "notes": "Enclosure: PeakMesh\nAntenna: Alpha-915\nBoard: RAK 4631\nFirmware: PS17.1.3\nRXPS: B"
+  },
+  {
+    "key": "312DB83B24D02BC8A24FD0DD041EDDFB7A3848F35C1295C0E68D74E81CD7BE71",
+    "name": "PeakMesh Green",
+    "notes": "Enclosure: PeakMesh\nAntenna: Alpha-915\nBoard: RAK 4631\nFirmware: PS17.1.3\nRXPS: M"
+  },
+  {
+    "key": "D7F8AE67E65D3FDC6030D943024649F36B39C22BE2A4EC1A0C6B65BF5D48BE5C",
+    "name": "Corebell 8dB",
+    "notes": "Enclosure: CoreBell\nAntenna: 8dB\nBoard: 114\nFirmware: PS17.1.3\nRXPS: B"
+  },
+  {
+    "key": "0D2987574CAE19CCC7942BB8BA82B12E3CE796914D18A236F45DFEFC26C8380A",
+    "name": "FlexSolar 915",
+    "notes": "Enclosure: FlexSolar\nAntenna: Alpha-915\nBoard: v4\nFirmware: PS17.1.3\nRXPS: B "
+  },
+  {
+    "key": "74C5ACFC7DBCB672125D17982B77EB1E0DA918A3E9F9DC1A81201B8057175B65",
+    "name": "Big Corebell",
+    "notes": "Enclosure: Big CoreBell\nAntenna: GP-Abree\nBoard: 114\nFirmware: PS17.1.3\nRXPS: M"
+  },
+  {
+    "key": "BFA8321263F26B4E2927EF734486683C1F85F4A321335415C442F647D57E3139",
+    "name": "FlexSolar abree ",
+    "notes": "Enclosure: FlexSolar\nAntenna: GP-Abree\nBoard: v4\nFirmware: PS17.1.3\nRXPS: B"
+  },
+  {
+    "key": "CBDF35B9CE3AB8D89D0267E201ABC44C0502B196FE7CC6DC9942E5B92971DE64",
+    "name": "Corebell Black",
+    "notes": "Enclosure: CoreBell\nAntenna: GP-Abree\nBoard: 114\nFirmware: PS17.1.3\nRXPS: M"
   }
 ]

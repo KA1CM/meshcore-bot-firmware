@@ -6,11 +6,12 @@ existing=Path(__file__).with_name('test_monitor_credentials.py').read_text(encod
 code=r"""
 #include "MonitorBotStatsHistory.h"
 #include "BotStatsWindow.h"
+#include "BotTopUsers.h"
 #include "RepeaterMonitorCore.h"
 #include <ArduinoJson.h>
 #include <cassert>
 struct MyMesh {
- BotStatsWindow bot_stats_window;MonitorBotStatsHistory bot_stats_history;
+ BotTopUsers bot_top_users;BotStatsWindow bot_stats_window;MonitorBotStatsHistory bot_stats_history;
  struct Clock{uint32_t utc=1791115200;uint32_t getCurrentTime(){return utc;}}clock;
  struct Millis{uint32_t getMillis(){return 10;}}ms;Millis* _ms=&ms;
  struct Monitor{bool ready=true;bool clockReady(){return ready;}}monitor;Monitor* repeaterMonitor=&monitor;
@@ -23,7 +24,9 @@ int main(){
  m.bot_stats_history.accepted(BOT_COMMAND_TEST,today-1,0);
  m.bot_stats_history.accepted(BOT_COMMAND_PASSWORD,today,0);
  m.bot_stats_window.accepted(BOT_COMMAND_TEST,0);m.bot_stats_window.accepted(BOT_COMMAND_NOTES,0);m.bot_stats_window.accepted(BOT_COMMAND_PASSWORD,0);
+ BotMessage user{};strcpy(user.sender_name,"Alice");m.bot_top_users.accepted(user,0);
  JsonDocument doc;m.exportBotStats(doc.to<JsonObject>());
+ assert(doc["topUsers"].size()==1&&doc["topUsers"][0]["name"]=="Alice"&&doc["topUsers"][0]["count"]==1);
  assert(doc["today"]==today&&doc["startedDay"]==today-1&&doc["storageReady"].as<bool>());
  assert(doc["days"].size()==30);assert(doc["days"][0]["day"]==today-29);assert(!doc["days"][0]["available"].as<bool>());
  assert(doc["days"][28]["available"].as<bool>()&&doc["days"][29]["available"].as<bool>());

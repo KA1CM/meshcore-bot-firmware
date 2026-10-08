@@ -1,0 +1,12 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('path');
+const html=fs.readFileSync(path.join(__dirname,'../../vendor/MeshCore/examples/companion_radio/RepeaterMonitorPage.html'),'utf8');
+const ctx=vm.createContext({});vm.runInContext(html.slice(html.indexOf('function monitorNotice('),html.indexOf('function render(){')),ctx);
+const state={storageOK:true,timeReady:true,manualReady:true,repeaters:[{key:'abcdef',name:'Saved name',displayName:'Chestnut Hill'}],active:0,running:true};
+assert.equal(ctx.monitorNotice(state).text,'Checking Chestnut Hill…');
+state.clockSyncRunning=true;state.clockSyncKey='abcdef';state.clockSyncResult='Waiting for repeater admin login.';
+assert.equal(ctx.monitorNotice(state).text,'Syncing time for Chestnut Hill… Waiting for repeater admin login.');
+state.clockSyncKey='missing';assert(!ctx.monitorNotice(state).text.includes('missing'));assert(ctx.monitorNotice(state).text.includes('Unknown repeater'));
+state.clockSyncRunning=false;state.running=false;assert(!ctx.monitorNotice(state).text.includes('Waiting for repeater admin login'));
+state.error='Storage failed';assert(ctx.monitorNotice(state).error);
+assert(!html.includes('id="clockresult"'));
+console.log('PASS: shared top banner, learned-name priority, sync priority, no raw keys, completed-result cleanup and error priority');

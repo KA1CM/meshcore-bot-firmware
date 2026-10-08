@@ -22,7 +22,7 @@ int main(){
  assert(!strcmp(names[0],"Chestnut Hill")&&!strcmp(names[2],"North-Stamford")&&!strcmp(names[4],"!Symbol"));
  char readable[33];BotVoltageList::shortName("North Stamford   - FN31fd",entries[0].key,readable);assert(!strcmp(readable,"North Stamford"));
  BotVoltageList::shortName("Trumbull Mall",entries[0].key,readable);assert(!strcmp(readable,"Trumbull Mall"));
- BotVoltageList::shortName("ABCDEFGHIJKLMNOPQRSTUVWXYZ",entries[0].key,readable);assert(!strcmp(readable,"ABCDEFGHIJKLMNOPQRSTUVWX"));
+ BotVoltageList::shortName("ABCDEFGHIJKLMNOPQRSTUVWXYZ",entries[0].key,readable);assert(!strcmp(readable,"ABCDEFGHIJKLMNOPQRST"));
  entries[1].readings[1].timestamp=2000000010;entries[1].readings[1].result=MonitorCore::NoResponse;
  BotVoltageList::Snapshot snapshot;BotVoltageList::build(entries,names,32,snapshot);
  assert(!strcmp(snapshot.lines[0],"Chestnut Hill 4.20V")&&!strcmp(snapshot.lines[1],"FlexSolar N/A"));

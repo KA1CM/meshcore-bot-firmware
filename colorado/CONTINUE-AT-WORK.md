@@ -1,108 +1,66 @@
-# Continue at work — October 4, 2026
+# Continue at work — October 7, 2026
 
-Latest work checkpoint: firmware `f88d5541` on `meshcore-bot-working`. See
-CONTINUE-AT-HOME.md for the complete October 4 handoff, tests and deployment
-status. The chart shared-legend layout is newer than the last work-board flash
-and still needs a requested build/upload. The earlier morning checkpoint below
-is retained as background.
+Parent: KA1CM/meshcore-bot-firmware, branch `main`.
+Firmware: KA1CM/MeshCore, branch `meshcore-bot-working`.
+Firmware commit: `641ba5ae8388cb7441d8278cfe5799ab9e311006` (filled by the commit-and-push script).
+The parent commit pins this firmware commit. Pull both repositories together.
 
+## Resume safely
 
-## Checkpoint and deployment
+Inspect both working trees and remotes, preserve any work-laptop changes, then fetch the KA1CM forks. Fast-forward clean, non-diverged branches only. Verify fork URLs because remote names differ between machines. Do not reset, clean, force-push, or reapply old patch queues. If the submodule is detached, preserve the pinned commit and attach the intended branch only after checking local state.
 
-Both repositories should be pushed together: parent `main`, vendor
-`meshcore-bot-working`, on the KA1CM remotes. The parent pins the vendor commit.
-Inspect both working trees, preserve local changes, fetch the KA1CM forks, and
-fast-forward only if clean and not diverged. Remote names differ between machines;
-verify URLs before pulling. Never reapply the historical patch queue or reset work.
+Home paths: `C:/MeshCore/meshcore-bot-firmware` and its `vendor/MeshCore`.
+Work parent was `C:/MeshCore/KA1CM-meshcore-bot-firmware`; locate and verify it.
+Preserve each computer's ignored `platformio.local.ini`, `out/monitor-secrets.h`, node identity, Wi-Fi and private passwords. They are excluded from commits. Device lists/passwords/notes live in device storage and are not automatically replaced by these source updates.
 
-**Latest source is NOT yet built or flashed.** Admin list commands and rolling
-stats were added October 4 and have passed focused host tests only.
+## Current workflow
 
-The home Fairfield bot currently runs the October 3 clickable-path-mention build.
-The user confirmed lookup was working. The successful lookup diagnostics reported
-three internet-resolved names and about 108 KB free memory. Earlier certificate
-and timeout failures were addressed with these changes together; no isolated
-experiment established which change resolved each failure:
+The user builds AND flashes manually. Do not build or flash automatically.
+Environment: `heltec_v4_companion_radio_usb`; home hardware is Heltec V4.3 with an 18650 and normally a USB wall charger. Home dashboard is `http://192.168.0.103/`.
+The desktop Fairfield flash launcher targets the HOME board (USB serial F8:5B:1B:BE:D8:C0). Do not use it unchanged for the work board (previous serial F8:5B:1B:BF:08:38, COM14). Verify the actual port/device before any user-requested upload. Preserve filesystem/settings.
 
-- GTS Root R4 from Google's official repository, verified against the analyzer.
-- TLS certificate verification flags captured before connection cleanup.
-- Notes stored as actual-length strings instead of fixed buffers, reducing static
-  RAM by 64,752 bytes. Copies and rollback use proper object copying.
-- TLS handshake allowance 15 seconds; path wait 28 seconds, DM expiry 45 seconds.
-- Path mentions use `@[name]` like test, with adjusted message budgets.
+The assistant has not built or flashed this checkpoint. The user has manually tested intermediate firmware, including internet alerts and three battery CSV experiments. The latest source changes still need the user's manual build/flash and live verification; do not infer deployment merely from passing host tests.
 
-## New source work to validate on device
+## Changes since the October 4 work checkpoint
 
-Authorized admin DMs now support:
+- Admin help is a compact overview with detailed `help <command>` replies. Preserve the user's manually edited wording.
+- Notes/password saved replies name the repeater. Raw note line breaks survive copy/paste. Password edits avoid a large stack copy and preserve saved credentials on failed storage/allocation.
+- Structured notes: Enclosure, Antenna, Board, Firmware, RXPS. `notes set <rpt> | antenna | Alpha-915` edits one field; whole-note replacement remains available. Enclosure labels and live notes are saved in `colorado/repeater-notes.json`; local-device application was already completed at home.
+- Short names: remove space-delimited FN31-prefixed words case-insensitively; stop at `- FN31` case-insensitively. Preserve other punctuation/UTF-8. Limit 20 characters / 32 bytes. If a multiword name exceeds the character limit, remove the whole word hit by character 20 and all following words. Single-word names keep the character cutoff; callers use a key when the result is empty.
+- Path replies retain the first five hop positions and final hop before ellipsis. Compacted names become full hashes, never `~`. Online resolution only targets unknown first-five hops; later hops can use learned/local names. Lookup queue has four entries and a five-second successful-request interval.
+- Path diagnostics keep the last 30 events with user/channel, cooldown ignores, full-queue fallback, memory and timing. The card is collapsed below command activity. Local names/cache remain available during confirmed internet loss; new online lookups are skipped until restored. Confirmed recovery clears the previous lookup failure backoff.
+- Dashboard refresh pauses until the path queue is empty to prevent overlap with TLS memory use. Wi-Fi retries indefinitely, and reconnect resets the HTTP listener. Wi-Fi status is in the header with `0d 2h 30m` durations. Monitor activity is unified with repeater names.
+- `users` returns as many of the top five users as fit in one message. Dashboard Top users shows up to ten based on available card height. Exact display names merge across companions/channels. Counts use rolling 24-hour accepted commands; tracking resets at reboot.
+- Stats replies use one message: `<n> responses in the last 24h`, then command percentages. Dashboard charts have brighter colors. Removed tracking-limit and bucket captions requested by the user.
+- Dashboard encoding repaired, with a generator check for corrupted UTF-8. Monitor status shows bot battery below IP and above Last advert.
+- Every bot text reply, DM retry and notification is queued at least 300 ms before transmission. Direct/flood ACK timeout includes that delay; other companion sends keep their default timing.
 
-```
-add <full key>
-remove <repeater>
-enable <repeater>
-disable <repeater>
-```
+## Power and connectivity notifications
 
-Adds start enabled, use favorite protection, and do not inherit passwords.
-Remove deletes the managed entry/history/notes and saved password, leaving the
-radio contact/favorite intact. Enable/disable preserves saved data. Case-insensitive
-partial names must match exactly one entry; unique key prefixes of at least four
-hex digits also work. Busy operations reject edits; failed saves roll back.
-Admin help includes all four commands.
+See `CONNECTIVITY-NOTIFICATIONS.md` and `BATTERY-SIGNATURE-TEST.md`.
 
-`stats` now pages a rolling summary and command counts/percentages, sorted by
-frequency. It uses 96 fifteen-minute buckets, dropping the oldest partial bucket,
-so it includes no records older than 24 hours but has 15-minute precision.
-Counters reset on reboot. RF totals and bot summary share the window. Percentages
-count accepted requests (including stats itself); aliases and command arguments
-share the parent command's count. It uses about 16 KB additional static RAM.
-After building, check free heap and TLS again, and verify real multipart DM and
-channel delivery. Status/console counters remain lifetime values.
+USB detection is now continuous: sample every second, average the previous 10 seconds, require a 25 mV change sustained for 20 seconds. Boot calibration lasts 60 seconds and ASSUMES USB IS CONNECTED. It uses under 200 bytes of fixed RAM, independent of the optional 10-minute CSV recorder. It is a voltage-signature heuristic, not a GPIO USB sensor. Booting on battery alone cannot establish the correct initial USB state. Brief dips, missing samples and invalid zero readings do not alone confirm transitions.
 
-## User workflow preferences
+All three home CSVs replay with one loss/restoration each: two near-full-charge tests (~33–42 mV change) and one started near 3.90 V before charging (~180–210 mV change). Connected ADC readings near 4.174 V reflect charging conditions rather than resting battery voltage. No raw CSV or private credential is committed. Continuous alert delivery needs live verification after the latest manual build.
 
-**Do not build until asked. User flashes manually from now on.** After a requested
-build, provide the firmware path and point to the desktop Flash-Fairfield launcher.
-The launcher calls `scripts/flash-fairfield.cmd` and `.ps1`, identifies the home
-board by its USB serial, and flashes application only at 0x10000. It never builds,
-erases the filesystem, or resets the board. Press RESET after flashing.
-It is specific to Fairfield and must not be used for a different work test board
-without intentionally adapting device identity. A DFU message alone no longer
-requests assistant flashing.
+Admin DMs go to existing contacts with Notifications permission enabled, using the acknowledged radio queue. Reports fit one message, no page numbers:
 
-Credentials remain in ignored local configuration and monitor-secrets.h. Preserve
-the work laptop's own configuration and node identity. Never commit secrets.
-Repeater notes and settings persist on the device; exported October 2 notes are
-in colorado/repeater-notes.json, not automatically applied at build time.
+- Power loss: `USB power lost`, loss timestamp, `Battery 4.03V`. Hourly: `USB power lost since`, original timestamp, current battery. Restore: `USB power restored`, `Total time xh ym`, current battery.
+- Wi-Fi loss: `Wi-Fi disconnected`, loss timestamp. Hourly: `Wi-Fi disconnected since`, original timestamp. After reconnect, perform a fresh internet check before reporting. Success: `Wi-Fi: Restored`, `Internet: Restored`, `Total time xh ym`. Failure: `Wi-Fi: Restored`, `Internet: Lost since`, original internet loss timestamp.
+- Internet-only loss: `Internet lost since`, first-failure timestamp. Hourly repeats that wording/timestamp. Restore: `Internet restored`, `Total time xh ym`.
 
-## Tests
+Normal internet checks are five minutes apart, including confirmed outages. A successful ONLINE path lookup resets that timer; local/cached resolutions do not. After the first failed round, retry twice at 30-second intervals, confirming loss in about one minute plus probe/delivery time. A successful round cancels the failure streak. Ordinary internet restoration requires two successes; the immediate Wi-Fi reconnect check supplies a combined report from one fresh check.
 
-Focused host tests: test_admin_list.py, test_stats_window.py,
-test_path_tls_diagnostics.py, test_monitor_export.py,
-test_monitor_private_routes.py, test_monitor_sync.py, test_list_delivery.py,
-run_path_tests.py, and vendor/MeshCore/tests/test_bot_advert.py.
-Use a native C++ compiler for these tests. Firmware environment:
-heltec_v4_companion_radio_usb. No October 4 firmware build has been requested.
+Probes use bounded tiny plain-HTTP responses from Microsoft/Mozilla, in a worker that cannot overlap the path worker. A failed endpoint falls back to the second endpoint. Redirects/unexpected content fail. Deferred checks/allocation failures are not network failures. An in-flight path request may finish its existing timeout after an outage is declared.
 
-The suggestion to move lookup diagnostics into a collapsed admin-only section
-has NOT been implemented or explicitly approved yet.
+Power, Wi-Fi and internet reminders have independent hourly timers. No duplicate internet-loss reminders while Wi-Fi is disconnected; a failed reconnect check starts internet-only reminders. Durations use monotonic elapsed time; timestamps use Eastern time or an honest unavailable-clock label. Queued events and outage tracking reset on reboot. The bounded queue and radio ACK/retry limits make delivery best effort.
 
-## Work PC manual build and upload command
+## Validation
 
-For Git Bash on this work PC, use the `Ting` user directory and explicitly select
-`vendor/MeshCore`, where `platformio.ini` lives. This command builds and uploads;
-run it only when you intend both actions. COM14 is the work board's current DFU
-port (USB serial F8:5B:1B:BF:08:38); check the port if Windows assigns another.
+October 7: focused host checks passed for admin help/notes/passwords, list parsing/delivery, short names/path budgets, stats/dashboard export, top users/layout, dashboard refresh/activity, Wi-Fi recovery, battery recorder, continuous USB detection, connectivity scheduling/exact report formats, offline path cache behavior, response delays, path event history/FIFO, and sunrise notifications. All three measured CSVs were replayed against the actual continuous USB detector. No firmware build was run by the assistant.
 
-```bash
-/c/Users/Ting/.platformio/penv/Scripts/platformio.exe run \
-  --project-dir /c/MeshCore/KA1CM-meshcore-bot-firmware/vendor/MeshCore \
-  -e heltec_v4_companion_radio_usb \
-  -t upload \
-  --upload-port COM14
-```
+Compiler: native g++ with CXX pointing at the installed MinGW compiler; Windows may need its bin directory on PATH. Tests are under `tests/firmware_bot/`; admin advert/help test is `vendor/MeshCore/tests/test_bot_advert.py`. The old broad `run_tests.py` references missing ResponseCoordinator.cpp; use the focused tests rather than claiming that runner passes.
 
-For PowerShell, use its continuation character (backtick), or this one-line form:
+## First checks at work
 
-```powershell
-& "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe" run --project-dir "C:\MeshCore\KA1CM-meshcore-bot-firmware\vendor\MeshCore" -e heltec_v4_companion_radio_usb -t upload --upload-port COM14
-```
+After preserving local configuration and fast-forwarding both repos: inspect this handoff and the pinned submodule, then continue the user's requested work. After the user's next manual build, verify USB loss/restoration and hourly reminder formats, boot with USB connected for calibration, internet failure confirmation at 30-second intervals, immediate Wi-Fi reconnect probe, and local/cached path replies during confirmed internet loss. Watch heap/dashboard reachability and radio delivery during lookups.

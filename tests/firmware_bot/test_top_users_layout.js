@@ -1,0 +1,13 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('path');
+const html=fs.readFileSync(path.join(__dirname,'../../vendor/MeshCore/examples/companion_radio/RepeaterMonitorPage.html'),'utf8');
+let mobile=false,height=125;
+const rows=Array.from({length:10},(_,i)=>({hidden:false,getBoundingClientRect:()=>({bottom:(i+1)*40})}));
+const root={children:rows,getBoundingClientRect:()=>({bottom:height})};
+const ctx=vm.createContext({$:()=>root,window:{matchMedia:()=>({matches:mobile})}});
+vm.runInContext(html.slice(html.indexOf('function fitTopUsers(){'),html.indexOf('const topUsersObserver=')),ctx);
+ctx.fitTopUsers();assert.equal(rows.filter(r=>!r.hidden).length,3);
+height=400;ctx.fitTopUsers();assert.equal(rows.filter(r=>!r.hidden).length,10);
+height=85;ctx.fitTopUsers();assert.equal(rows.filter(r=>!r.hidden).length,2);
+mobile=true;ctx.fitTopUsers();assert.equal(rows.filter(r=>!r.hidden).length,10);
+assert(!html.includes('Tracking limit reached'));assert(html.includes('id="topuserstitle">Top users'));
+console.log('PASS: complete rows fit available height, resize recovery, ten-user mobile view and removed footer');

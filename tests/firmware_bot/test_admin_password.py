@@ -7,16 +7,24 @@ existing=Path(__file__).with_name('test_monitor_credentials.py').read_text(encod
 mock=existing.split('mock = r"""',1)[1].split('"""',1)[0]
 harness=r"""
 #include "MonitorCredentials.h"
+#include "BotVoltageList.h"
 #include "FirmwareBot.h"
 #include "BotCommandRegistry.h"
 #include <cassert>
 #include <strings.h>
 using namespace MonitorCore;
+static bool failAllocation=false;
+void* operator new(std::size_t n,const std::nothrow_t&) noexcept {
+ if(failAllocation)return nullptr;
+ try{return ::operator new(n);}catch(...){return nullptr;}
+}
+void operator delete(void* p,const std::nothrow_t&) noexcept {::operator delete(p);}
+
 struct BotAdminContacts {enum{Commands=1};bool allowed=true;bool allows(const uint8_t*,int){return allowed;}};
 struct RepeaterMonitor {
  BotAdminContacts adminContacts;Entry entries[MAX_REPEATERS];size_t count=2;
  bool storageOK=true,adminCheckPending=false,occupied=false;bool adminConfirmed[MAX_REPEATERS]{};
- MonitorCredentials credentials;
+ MonitorCredentials credentials;char adminEditReply[128]{};
  bool busy(){return occupied;}
  struct Mesh {struct Contact{char name[33]{};};Contact* lookupContactByPubKey(const uint8_t*,int){return nullptr;}}mesh;
  const char* adminPassword(const uint8_t*,const char*);
@@ -26,12 +34,17 @@ int main(){
  RepeaterMonitor m;uint8_t admin[32]{};m.entries[0].key[0]=1;m.entries[1].key[0]=2;
  strcpy(m.entries[0].name,"Chestnut Hill");strcpy(m.entries[1].name,"Canoe Hill");
  assert(m.credentials.begin(m.entries,m.count));
- assert(strstr(m.adminPassword(admin,"Chestnut | First!"),"saved"));
+ assert(!strcmp(m.adminPassword(admin,"Chestnut | First!"),"Chestnut Hill password saved"));
  assert(!strcmp(m.credentials.password(m.entries[0].key),"First!"));
  m.adminConfirmed[0]=true;
  assert(strstr(m.adminPassword(admin,"0100 | New  pass|!"),"saved"));
  assert(!strcmp(m.credentials.password(m.entries[0].key),"New  pass|!"));assert(!m.adminConfirmed[0]);
  const std::string previous=m.credentials.password(m.entries[0].key);
+ failAllocation=true;m.adminConfirmed[0]=true;
+ assert(strstr(m.adminPassword(admin,"Chestnut | allocation-test"),"not applied"));
+ assert(previous==m.credentials.password(m.entries[0].key));assert(m.adminConfirmed[0]);
+ failAllocation=false;
+
  assert(strstr(m.adminPassword(admin,"Hill | bad"),"Multiple"));
  assert(strstr(m.adminPassword(admin,"unknown | bad"),"No matching"));
  assert(strstr(m.adminPassword(admin,"Chestnut"),"Usage"));

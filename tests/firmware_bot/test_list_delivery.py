@@ -18,7 +18,7 @@ struct ContactInfo{};
 bool botFormatResponseForChannel(const BotMessage&,const char* text,size_t n,char* out,size_t cap,size_t* written){assert(n<cap);memcpy(out,text,n+1);*written=n;return true;}
 #define PUB_KEY_SIZE 32
 struct MyMesh {
- struct PendingVoltageList {BotVoltageList::Snapshot snapshot;BotCommandId command=BOT_COMMAND_LIST;bool notification=false;bool adminOnly=false;bool active=true;BotChannelKind kind=BOT_CHANNEL_DM;uint8_t channel=0,key[32]{};size_t next=0;unsigned part=1,failures=0;uint32_t deadline=100,expires=600000;} pending_voltage_list;
+ struct PendingVoltageList {BotVoltageList::Snapshot snapshot;BotCommandId command=BOT_COMMAND_LIST;bool notification=false,statusNotification=false;bool adminOnly=false;bool active=true;BotChannelKind kind=BOT_CHANNEL_DM;uint8_t channel=0,key[32]{};size_t next=0;unsigned part=1,failures=0;uint32_t deadline=100,expires=600000;} pending_voltage_list;
  struct {bool active=false;} pending_bot_dm_ack;
  struct {unsigned send_failures=0;} bot_stats;
  struct Clock {uint32_t getMillis(){return ticks;}} clock;Clock* _ms=&clock;
@@ -42,6 +42,8 @@ int main(){
  MyMesh report;report.pending_voltage_list.notification=true;
  for(int i=0;i<3;++i){report.pending_bot_dm_ack.active=false;ticks+=5000;report.sendNextVoltageListPart();assert(report.lastBody.find("Low Voltage Report:\n")==0);assert(report.lastBody.find(std::to_string(i+1)+"/3\n")!=std::string::npos);}
  assert(!report.pending_voltage_list.active&&report.sends==3);
+ MyMesh health;health.pending_voltage_list.notification=true;health.pending_voltage_list.statusNotification=true;health.pending_voltage_list.snapshot.count=2;strcpy(health.pending_voltage_list.snapshot.lines[0],"Communication lost");strcpy(health.pending_voltage_list.snapshot.lines[1],"Wi-Fi : Lost since Oct 06 10:00");
+ health.sendNextVoltageListPart();assert(health.lastBody.find("Low Voltage Report")==std::string::npos);assert(health.lastBody.find("1/")==std::string::npos);assert(health.sends==1 && !health.pending_voltage_list.active);
  MyMesh empty;empty.pending_voltage_list.notification=true;empty.pending_voltage_list.snapshot.count=1;strcpy(empty.pending_voltage_list.snapshot.lines[0],BotVoltageList::EMPTY_LOW);
  empty.sendNextVoltageListPart();assert(empty.lastBody==std::string("Low Voltage Report:\n")+BotVoltageList::EMPTY_LOW);assert(!empty.pending_voltage_list.active);
  commandAllowed=false;
