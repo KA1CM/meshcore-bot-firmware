@@ -17,19 +17,22 @@ code=r'''
 #define BOT_COMMAND_PATH 1
 #define BOT_COMMAND_RESULT_OK 0
 #define BOT_MAX_RESPONSE_LEN 144
+#define BOT_COMMAND_COOLDOWN_SLOTS 8
+#define BOT_COMMAND_COOLDOWN_MILLIS 5000
 #define PUB_KEY_SIZE 32
 uint32_t ticks=0;bool millisHasNowPassed(uint32_t t){return (int32_t)(ticks-t)>0;}uint32_t futureMillis(uint32_t n){return ticks+n;}
 struct BotMessage{int channel_kind=0;char sender_name[33]{};char channel_name[33]{};};
 struct ContactInfo{};
-namespace BotPath{struct Route{int id=0;};struct Result{int code=0;size_t text_len=1;};Result format(Route r,const char*,char* out,size_t){out[0]='0'+r.id;return {};}}
-namespace BotPathLookup{bool running=false,complete=false;int id=0,starts=0;bool start(BotPath::Route r,const char*,const char*){assert(!running);running=true;id=r.id;++starts;return true;}bool take(BotPath::Route& r){if(!complete)return false;r.id=id;running=false;complete=false;return true;}}
+namespace BotPath{struct Route{int id=0;bool all=false;size_t count=3;};struct Result{int code=0;size_t text_len=1;};Result format(Route r,const char*,char* out,size_t){out[0]='0'+r.id;return {};}Result formatAll(Route r,const char* t,size_t first,size_t& next,char* out,size_t n){next=first+1;return format(r,t,out,n);}}
+namespace BotPathLookup{bool running=false,complete=false;bool inProgress(){return running;}int id=0,starts=0;bool start(BotPath::Route r,const char*,const char*){assert(!running);running=true;id=r.id;++starts;return true;}bool take(BotPath::Route& r){if(!complete)return false;r.id=id;running=false;complete=false;return true;}}
 namespace BotInternetProbe{bool active=false;bool busy(){return active;}}
 namespace BotPrefsCodec{bool commandEnabled(int,int){return true;}}
-namespace FirmwareBot{size_t maxResponseLenForChannel(int){return 120;}}
+namespace FirmwareBot{void recordCommandCooldown(int*,int,int,uint32_t,uint32_t){} size_t maxResponseLenForChannel(int){return 120;}}
 bool botFormatResponseForChannel(const BotMessage&,const char* in,size_t n,char* out,size_t,size_t* written){memcpy(out,in,n);*written=n;return true;}
 struct MyMesh{
- struct Pending{bool active=false,ready=false,started=false,lookupRunning=false,sent=false;BotPath::Route route;BotMessage message;uint8_t key[32]{},channel=0;uint32_t lookupDeadline=0,expires=180000;}pending_bot_paths[4];
+ struct Pending{bool active=false,ready=false,started=false,lookupRunning=false,sent=false;BotPath::Route route;BotMessage message;uint8_t key[32]{},channel=0;size_t nextHop=0;uint32_t nextPart=0;uint8_t failures=0;uint32_t lookupDeadline=0,expires=180000;}pending_bot_paths[4];
  size_t bot_path_head=0,bot_path_count=0;
+ int bot_command_cooldowns[8]{};struct Clock{uint32_t getMillis(){return ticks;}}clock;Clock* _ms=&clock;
  struct Prefs{bool enabled=true;operator int()const{return 0;}}bot_prefs;
  struct {bool active=false;}pending_bot_dm_ack,pending_voltage_list;
  struct {unsigned send_failures=0;}bot_stats;
@@ -49,6 +52,10 @@ int main(){MyMesh m;assert(!m.hasPendingPathReplies());m.enqueue(1);assert(m.has
  BotPathLookup::complete=true;m.pollBotPath();assert(m.bot_path_count==1);m.pollBotPath();assert(BotPathLookup::id==3);
  BotPathLookup::complete=true;m.pending_bot_paths[m.bot_path_head].message.channel_kind=BOT_CHANNEL_DM;m.pending_bot_dm_ack.active=true;
  m.pollBotPath();assert(m.replies.size()==2);m.pending_bot_dm_ack.active=false;m.pollBotPath();assert(m.replies==std::vector<int>({1,2,3}));
+ m.enqueue(4);m.pending_bot_paths[m.bot_path_head].route.all=true;m.pollBotPath();BotPathLookup::complete=true;m.pollBotPath();
+ assert(m.pending_bot_paths[m.bot_path_head].nextHop==1);size_t sent=m.replies.size();m.pollBotPath();assert(m.replies.size()==sent);
+ ticks+=5001;m.pollBotPath();assert(m.pending_bot_paths[m.bot_path_head].nextHop==2);
+ ticks+=5001;m.pollBotPath();assert(!m.bot_path_count);
  for(int i=0;i<4;++i){m.enqueue(i);}assert(m.bot_path_count==4);
  for(int i=0;i<4;++i){m.pollBotPath();BotPathLookup::complete=true;m.pollBotPath();}assert(!m.bot_path_count&&!m.hasPendingPathReplies());
 }

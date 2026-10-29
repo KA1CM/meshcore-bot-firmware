@@ -14,7 +14,7 @@ int main(){
  const BotTopUsers::User* top[5];uint32_t counts[5];assert(users.top(2,top,counts)==2&&!strcmp(top[0]->name,"Bob")&&counts[0]==2);
  BotVoltageList::Snapshot snapshot;users.snapshot(2,snapshot);char body[121];
  assert(BotVoltageList::singleMessage(snapshot,body,sizeof(body)));
- assert(!strcmp(body,"Top 5 users in the last 24h\n@[Bob] 2\n@[Alice] 1"));
+ assert(!strcmp(body,"@[Bob] 2\n@[Alice] 1"));
  BotCommand command{};assert(FirmwareBot::parseCommand("users",5,&command,true)&&command.id==BOT_COMMAND_USER);
  assert(BotCommandRegistry::isDiscoverable(BOT_COMMAND_USER));
  assert(users.top(86400000,top,counts)==0);
@@ -25,7 +25,7 @@ int main(){
  combined.accepted(ka,1);ka.sender_key_prefix[0]=2;combined.accepted(ka,2);
  assert(combined.top(2,top,counts)==1&&counts[0]==3&&!strcmp(top[0]->name,"KA1CM"));
  combined.snapshot(2,snapshot);assert(BotVoltageList::singleMessage(snapshot,body,sizeof(body)));
- assert(!strcmp(body,"Top 5 users in the last 24h\n@[KA1CM] 3"));
+ assert(!strcmp(body,"@[KA1CM] 3"));
  BotTopUsers many;for(int i=0;i<33;++i){BotMessage m{};snprintf(m.sender_name,sizeof(m.sender_name),"User%02d",i);many.accepted(m,0);}
  assert(many.limited()&&many.top(0,top,counts)==5);assert(!strcmp(top[0]->name,"User00"));
  many.top(86400000,top,counts);assert(!many.limited());many.accepted(a,86400001);assert(many.top(86400001,top,counts)==1);
@@ -33,9 +33,15 @@ int main(){
  BotTopUsers tenUsers;for(int i=0;i<12;++i){BotMessage m{};snprintf(m.sender_name,sizeof(m.sender_name),"User%02d",i);tenUsers.accepted(m,0);}
  assert(tenUsers.top(0,ten,tenCounts,10)==10&&!strcmp(ten[9]->name,"User09"));
  assert(tenUsers.top(0,top,counts)==5);
+ tenUsers.snapshot(0,snapshot);assert(snapshot.count==5);
+ assert(BotVoltageList::singleMessage(snapshot,body,sizeof(body)));
+ assert(strstr(body,"@[User04] 1")&&!strstr(body,"Top 5"));
+ BotTopUsers empty;empty.snapshot(0,snapshot);
+ assert(BotVoltageList::singleMessage(snapshot,body,sizeof(body)));
+ assert(!strcmp(body,"No users recorded yet"));
  BotTopUsers longNames;for(int i=0;i<5;++i){BotMessage m{};memset(m.sender_name,'a'+i,sizeof(m.sender_name)-1);longNames.accepted(m,0);}
  longNames.snapshot(0,snapshot);assert(BotVoltageList::singleMessage(snapshot,body,sizeof(body)));assert(strlen(body)<=120);
- assert(strstr(body,"@[aaaa")&&strstr(body,"@[bbbb")&&!strstr(body,"@[cccc"));assert(body[strlen(body)-1]=='1');
+ assert(strstr(body,"@[aaaa")&&strstr(body,"@[bbbb")&&strstr(body,"@[cccc")&&!strstr(body,"@[dddd"));assert(body[strlen(body)-1]=='1');
  BotTopUsers wrap;wrap.accepted(a,0xfffffff0);assert(wrap.top(32,top,counts)==1);assert(wrap.top(86400032,top,counts)==0);
 }
 '''

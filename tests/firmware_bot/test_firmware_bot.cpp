@@ -1815,6 +1815,16 @@ static void test_response_coordinator_rejects_non_normal() {
 }
 
 int main() {
+  {
+    BotCommand command{};
+    assert(FirmwareBot::parseCommand("save",4,&command,true));
+    assert(command.id==BOT_COMMAND_SAVE && command.args_len==0);
+    assert(FirmwareBot::parseCommand("!save",5,&command,true));
+    assert(command.id==BOT_COMMAND_SAVE);
+    assert(FirmwareBot::parseCommand("/save",5,&command,true));
+    assert(command.id==BOT_COMMAND_SAVE);
+    assert(!FirmwareBot::parseCommand("save",4,&command,false));
+  }
   test_command_registry();
   test_channel_policy();
   test_bot_prefs_defaults();

@@ -31,7 +31,7 @@ int main(){
  const Kind kinds[]={PowerLost,PowerReminder,PowerRestored,WifiLost,WifiReminder,WifiRestoredOnline,WifiRestoredOffline,InternetLost,InternetReminder,InternetRestored};
  const char* expected[]={
  "USB power lost\nTime 200\nBattery 4.03V",
- "USB power lost since\nTime 100\nBattery 4.03V",
+ "USB power lost for 2h\nsince Time 100\nBattery 4.03V",
  "USB power restored\nTotal time 2h 3m\nBattery 4.03V",
  "Wi-Fi disconnected\nTime 200",
  "Wi-Fi disconnected since\nTime 100",
@@ -40,6 +40,13 @@ int main(){
  "Internet lost since\nTime 100",
  "Internet lost since\nTime 100",
  "Internet restored\nTotal time 2h 3m"};
+ for(uint32_t hours : {1U,3U,24U}) {
+  RepeaterMonitor m;m.connectivityCount=1;auto& e=m.connectivityEvents[0];
+  e.kind=PowerReminder;e.since=100;e.durationMs=hours*3600000UL+59999;e.battery=3860;
+  m.pollConnectivityNotifications();char body[121];
+  assert(BotVoltageList::singleMessage(m.mesh.messages[0],body,sizeof(body)));
+  assert(std::string(body)=="USB power lost for "+std::to_string(hours)+"h\nsince Time 100\nBattery 3.86V");
+ }
  for(size_t i=0;i<10;++i){
   RepeaterMonitor m;m.connectivityCount=1;auto& e=m.connectivityEvents[0];
   e.kind=kinds[i];e.utc=200;e.since=100;e.durationMs=7380000;e.battery=4030;

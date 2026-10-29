@@ -14,6 +14,8 @@ BotCommandResult botWriteText(char* o,size_t n,const char* t){snprintf(o,n,"%s",
 void botFormatQuarters(int q,char* o,size_t n){snprintf(o,n,"%.2f",q/4.0);}
 struct ContactInfo {char name[33]{};};
 struct MyMesh {
+ struct Clock {uint32_t ticks=100;uint32_t getMillis(){return ticks;}} clock;
+ Clock* _ms=&clock;
  BotNeighbor bot_neighbors[BOT_NEIGHBOR_SLOTS]{};
  ContactInfo* lookupContactByPubKey(const uint8_t*,size_t){return nullptr;}
  BotCommandResult executeBotNeighborsCommand(const BotMessage&,char*,size_t,BotVoltageList::Snapshot*);
@@ -34,6 +36,16 @@ int main(){
  // Equal samples and SNR are ordered by recency.
  m.bot_neighbors[0].snr_quarters=m.bot_neighbors[1].snr_quarters;m.bot_neighbors[0].last_heard_millis=100;
  m.executeBotNeighborsCommand(msg,unused,sizeof(unused),&snapshot);assert(!strncmp(snapshot.lines[0],"00000000",8));
+ for(auto& n:m.bot_neighbors)n.active=false;
+ // Both the single reply and all-pages snapshot exclude stale neighbors.
+ m.clock.ticks=86400200UL;
+ m.bot_neighbors[0].active=true;m.bot_neighbors[0].last_heard_millis=200;
+ m.bot_neighbors[1].active=true;m.bot_neighbors[1].last_heard_millis=199;
+ m.executeBotNeighborsCommand(msg,unused,sizeof(unused),&snapshot);assert(snapshot.count==1);
+ char recent[121];m.executeBotNeighborsCommand(msg,recent,sizeof(recent),nullptr);
+ assert(strstr(recent,"00000000") && !strstr(recent,"01000000"));
+ m.clock.ticks++;m.executeBotNeighborsCommand(msg,recent,sizeof(recent),&snapshot);
+ assert(snapshot.count==0);
  for(auto& n:m.bot_neighbors)n.active=false;
  char empty[121];m.executeBotNeighborsCommand(msg,empty,sizeof(empty),&snapshot);assert(!snapshot.count&&!strcmp(empty,"No repeaters heard directly"));
 }

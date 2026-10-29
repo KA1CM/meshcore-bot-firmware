@@ -1,6 +1,17 @@
 #include "BotTypes.h"
 #include <cassert>
 int main() {
+ {
+   BotNeighbor neighbor{};
+   assert(!neighbor.heardWithin24Hours(0));
+   neighbor.active=true;neighbor.last_heard_millis=100;
+   assert(neighbor.heardWithin24Hours(100));
+   assert(neighbor.heardWithin24Hours(86400100UL));
+   assert(!neighbor.heardWithin24Hours(86400101UL));
+   neighbor.last_heard_millis=0xfffffff0UL;
+   assert(neighbor.heardWithin24Hours(16));
+   assert(!neighbor.heardWithin24Hours((uint32_t)(0xfffffff0UL+86400001UL)));
+ }
  BotNeighbor n{};
  n.addSignalSample(-100,19);assert(n.rssi_dbm==-100 && n.snr_quarters==19 && n.sample_count==1);
  n.addSignalSample(-90,21);assert(n.rssi_dbm==-95 && n.snr_quarters==20);

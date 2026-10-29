@@ -4,10 +4,72 @@
 #include "FirmwareBot.h"
 int32_t FirmwareBot::easternUtcOffsetSeconds(uint32_t) { return -14400; }
 #include <cassert>
+#include <initializer_list>
 #include <cstring>
 #include <cstdio>
 
 int main() {
+  {
+    BotCommand command{};command.id=BOT_COMMAND_HELP;
+    BotCommandContext context{};char reply[BOT_MAX_GROUP_RESPONSE_LEN+1];
+    strcpy(command.args,"path");command.args_len=4;
+    auto result=BotCommands::executeCommand(command,context,reply,sizeof(reply));
+    assert(result.code==BOT_COMMAND_RESULT_OK);
+    assert(!strcmp(reply,"path: show path from requester to local bot in one message.\n"
+      "path all: response in multiple messages if needed."));
+    strcpy(command.args,"path all");command.args_len=8;
+    result=BotCommands::executeCommand(command,context,reply,sizeof(reply));
+    assert(result.code==BOT_COMMAND_RESULT_OK);
+    assert(!strcmp(reply,"path all: response in multiple messages if needed."));
+  }
+  // Multipart replies use PATH labels, preserving every hop and full name.
+  for(unsigned width=1;width<=4;++width) {
+    BotPath::Route route;route.all=true;route.width=width;route.count=64/width;
+    for(size_t i=0;i<route.count;++i) {
+      route.bytes[i*width]=(uint8_t)i;
+      if(i%3==0)strcpy(route.names[i],"Known repeater");
+      if(i%3==1){strcpy(route.names[i],"Must not guess");route.ambiguous[i]=true;}
+    }
+    for(size_t capacity : {size_t(128),size_t(145)}) {
+      size_t cursor=0,parts=0;
+      while(cursor<route.count) {
+        char text[146];memset(text,'!',sizeof(text));size_t next=cursor;
+        auto result=BotPath::formatAll(route,"abcdefghijklmnopqrstuvwxyz12345",cursor,next,text,capacity);
+        assert(result.code==BOT_COMMAND_RESULT_OK && next>cursor);
+        assert(result.text_len==strlen(text) && result.text_len<capacity && text[capacity]=='!');
+        assert(!strstr(text,"Path all") && !strstr(text,"unknown") && !strstr(text,"Must not guess"));
+        unsigned page=0,total=0;
+        assert(sscanf(strchr(text,']')+2,"%u/%u",&page,&total)==2);
+        assert(page==parts+1 && total>1);
+        const char* line=strchr(text,'\n')+1;
+        for(size_t i=cursor;i<next;++i) {
+          char hex[9],expected[80];BotPath::hash(route,i,hex);
+          if(i%3==0)strcpy(expected,"Known repeater");
+          else snprintf(expected,sizeof(expected),"%s.",hex);
+          assert(!strncmp(line,expected,strlen(expected)));
+          line+=strlen(expected);if(i+1<next)assert(*line++=='\n');
+        }
+        assert(!*line);cursor=next;++parts;
+        if(cursor==route.count)assert(parts==total);
+      }
+      assert(parts>1);
+    }
+  }
+  {
+    BotPath::Route direct;direct.all=true;direct.width=2;char reply[128];size_t next=0;
+    assert(BotPath::formatAll(direct,"jim",0,next,reply,sizeof(reply)).code==BOT_COMMAND_RESULT_OK);
+    assert(!strcmp(reply,"@[jim] 1/1\nDirect"));
+  }
+  {
+    BotCommand command{};command.id=BOT_COMMAND_PATH;strcpy(command.args,"aLl");command.args_len=3;
+    uint8_t hashes[]={0xab,0xcd,0xef,0x12};
+    BotCommandContext context{};context.path_hash_size=2;context.path_hash_count=2;context.path_len=2;context.path=hashes;
+    BotPath::Route route;
+    assert(BotCommands::pathRoute(command,context,route) && route.all && route.count==2);
+    assert(!memcmp(route.bytes,hashes,sizeof(hashes)));
+    command.args_len=0;
+    assert(BotCommands::pathRoute(command,context,route) && !route.all);
+  }
   { BotPath::Route direct; direct.width=2; char reply[128];
     const auto result=BotPath::format(direct,"Celluoid Desktop",reply,sizeof(reply));
     assert(result.code==BOT_COMMAND_RESULT_OK);
@@ -23,7 +85,7 @@ int main() {
   { BotPath::Route missing;missing.width=2;missing.count=6;
     for(int i=0;i<6;++i)missing.bytes[2*i+1]=i;
     char reply[80];auto result=BotPath::format(missing,nullptr,reply,sizeof(reply));
-    assert(result.code==BOT_COMMAND_RESULT_OK&&!strcmp(reply,"0000.\n0001.\n0002.\n0003.\n0004.\n0005"));
+    assert(result.code==BOT_COMMAND_RESULT_OK&&!strcmp(reply,"0000.\n0001.\n0002.\n0003.\n0004.\n0005."));
     char exact[sizeof(reply)];const size_t capacity=strlen(reply)+1;
     assert(BotPath::format(missing,nullptr,exact,capacity).code==BOT_COMMAND_RESULT_OK);
     assert(strlen(exact)<capacity);
@@ -31,7 +93,15 @@ int main() {
   // Unknown/colliding hops retain the complete hash, never an arbitrary name.
   r.names[1][0]=0; r.ambiguous[2]=true;
   BotPath::format(r,"alice",out,sizeof(out));
-  assert(strstr(out,"\na101.\na102\n"));
+  assert(strstr(out,"\na101.\na102.\n"));
+  {
+    BotPath::Route unresolved;unresolved.width=4;unresolved.count=2;
+    unresolved.bytes[0]=0xab;unresolved.bytes[4]=0xcd;
+    strcpy(unresolved.names[1],"Conflicting name");unresolved.ambiguous[1]=true;
+    char reply[128];
+    assert(BotPath::format(unresolved,nullptr,reply,sizeof(reply)).code==BOT_COMMAND_RESULT_OK);
+    assert(!strcmp(reply,"ab000000.\ncd000000."));
+  }
   for(unsigned i=0;i<6;++i) {snprintf(r.names[i],33,"Long repeater name number %u",i+1); r.ambiguous[i]=false;}
   result=BotPath::format(r,"alice",out,130);
   assert(result.code==BOT_COMMAND_RESULT_OK && result.text_len<130);
@@ -167,6 +237,13 @@ int main() {
   bool ambiguous=false;
   assert(BotPathLookup::readEntry(entry,"b431",name,ambiguous));
   assert(!strcmp(name,"Amston Lake") && !ambiguous);
+  {
+    candidate["name"]="North Stamford Solar Repeater Full Name";
+    char fullName[97];
+    assert(BotPathLookup::readEntry(entry,"b431",fullName,ambiguous,true,sizeof(fullName)));
+    assert(!strcmp(fullName,"North Stamford Solar Repeater Full Name") && !ambiguous);
+    candidate["name"]="Amston Lake";
+  }
   BotPathLookup::readEntry(entry,"b4",name,ambiguous);
   assert(!strcmp(name,"Amston Lake") && !ambiguous);
   BotPathLookup::readEntry(entry,"b431d2",name,ambiguous);
